@@ -1,0 +1,20 @@
+proc setlook {} {
+rotate stop
+color Display Background white
+display projection orthographic
+mol material Edgy
+mol selection "all"
+mol representation VDW 0.5 10.000000
+mol color name
+mol addrep 0
+axes location off
+}
+
+topo readlammpsdata data.start
+
+set sel [atomselect top "all"]
+$sel set radius 1.0
+
+pbc box
+#pbc wrap -all
+setlook

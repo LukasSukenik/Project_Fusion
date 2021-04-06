@@ -1,0 +1,63 @@
+proc setlook {} {
+rotate stop
+color Display Background white
+display projection orthographic
+mol material AOChalky
+mol selection "name 1 && resid 3"
+mol representation VDW 5 10.000000
+mol color ColorID 0
+mol addrep 0
+mol material AOChalky
+mol selection "name 2 && resid 3"
+mol representation VDW 5 10.000000
+mol color ColorID 23
+mol addrep 0
+mol material AOChalky
+mol selection "name 3 && resid 3"
+mol representation VDW 5 10.000000
+mol color ColorID 24
+mol addrep 0
+mol material AOChalky
+mol selection "name 1 && resid 1"
+mol representation VDW 5 10.000000
+mol color ColorID 3
+mol addrep 0
+mol material AOChalky
+mol selection "name 2 && resid 1"
+mol representation VDW 5 10.000000
+mol color ColorID 31
+mol addrep 0
+mol material AOChalky
+mol selection "name 3 && resid 1"
+mol representation VDW 5 10.000000
+mol color ColorID 32
+mol addrep 0
+mol material AOChalky
+mol selection "name 4"
+mol representation VDW 5 10.000000
+mol color ColorID 4
+mol addrep 0
+mol material AOChalky
+mol selection "name 5"
+mol representation VDW 5 10.000000
+mol color ColorID 16
+mol addrep 0
+axes location off
+}
+
+topo readlammpsdata data.start
+mol addfile file.xtc	 
+
+set sel [atomselect top "name 1 2 3 4 5"]
+$sel set radius 1.0
+
+color change rgb 0  0.66 0.79 1.0
+color change rgb 3  1.0 0.72 0.88
+color change rgb 23  0.28 0.60 1.0
+color change rgb 24  0.0 0.14 0.54
+color change rgb 31  1.0 0.33 0.65
+color change rgb 32  0.33 0.0 0.31
+
+pbc box
+#pbc wrap -all
+setlook

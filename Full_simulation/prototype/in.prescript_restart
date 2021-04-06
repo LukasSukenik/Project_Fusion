@@ -1,0 +1,60 @@
+units           lj
+atom_style      full
+special_bonds   fene 
+processors      * * * map xyz
+boundary        p p p
+
+comm_style tiled
+comm_modify mode single
+
+bond_style      hybrid fene harmonic
+pair_style      hybrid/overlay lj/cut 1.2 cosatt 1.6 1.122462048309373
+pair_modify     shift yes
+
+#read_data       data.start
+read_restart     restart.*
+
+include force_field
+
+#
+# Decide if bin or multi depending on performance
+#
+neighbor        1.75 bin
+neigh_modify every 1 delay 15 # must be every 1
+balance 1.1 rcb
+
+group 		move type 1 2 3
+group 		membrane type 1 2 3
+group		ves1 molecule 1
+group		ves2 molecule 3
+group		nano molecule 2
+group           nano_ves molecule 1 2
+group           rigid type 4 5
+group           ligand type 5
+
+compute pair_lig_rec     membrane group/group ligand
+compute pair_ves1_rec    ves1 group/group ligand
+compute pair_ves2_rec    ves2 group/group ligand
+
+compute gyr membrane gyration
+compute gyr1 ves1 gyration
+compute gyr2 ves2 gyration
+compute cm1 ves1 com
+compute cm2 ves2 com
+
+thermo_style     custom step temp pe ke c_pair_lig_rec c_pair_ves1_rec c_pair_ves2_rec c_gyr c_gyr1 c_gyr2 c_cm1[1] c_cm1[2] c_cm1[3] c_cm2[1] c_cm2[2] c_cm2[3]
+thermo           5000
+thermo_modify norm no
+dump             2 all xtc 5000 file.xtc
+
+fix integrator move nve
+fix 5 all balance 1000 1.1 rcb
+fix rigid_integrator rigid rigid/nve molecule langevin 1.0 1.0 r_damp r_random 
+fix thermostat move langevin 1.0    1.0   r_damp r_random gjf yes zero yes
+
+restart         r_run restart.*
+
+timestep        r_timestep
+run             r_run
+
+write_data data.end
