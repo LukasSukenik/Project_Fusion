@@ -1,0 +1,72 @@
+
+#!/bin/bash
+# INFINITY JobType loop
+# INFINITY start   1
+# INFINITY stop    2
+# INFINITY format  res.%04d
+# INFINITY afix    .cpt
+# INFINITY archive storage
+
+function compile_lammps
+{
+rm -rf ./src/Obj_mpi ./src/lmp_mpi lmp_mpi
+
+savefiles ""
+tes=`which mpirun`
+
+if [ -z $tes ]; then
+    module add mpich
+fi
+
+cd src/
+make yes-misc
+make yes-rigid
+make -j $INF_NCPU mpi
+cp lmp_mpi ./..
+cd ..
+}
+
+# archive runtime files from the previous stage
+parchive runtime $INF_LOOP_START $INF_LOOP_CURRENT $INF_LOOP_FORMAT
+
+# create STAGE strings
+# CURR - prefix for the data produced in this run
+# NEXT - prefix for the restart file for the next run
+CURR="`printf $INF_LOOP_FORMAT $(($INF_LOOP_CURRENT))`"
+NEXT="`printf $INF_LOOP_FORMAT $(($INF_LOOP_CURRENT+1))`"
+
+#compile_lammps
+
+# is this the first run?
+# get input files/coordinates
+if [ $INF_LOOP_CURRENT -eq $INF_LOOP_START ]; then
+    infile="in.equi"
+else
+    # coordinate and input files from previous run
+    parchive get ${CURR}.cpt
+    if [ $? -ne 0 ]; then exit 1; fi  # exit if this fails
+    cp ${CURR}.cpt `cat lastRestart.txt`
+    infile="in.restart"
+fi
+
+# run the simulation
+mpirun -np $INF_NCPU ./lmp_mpi -in $infile
+
+# rename files
+ls -1 -v restart* | tail -n 1 > lastRestart.txt
+cp `ls -1 -v restart* | tail -n 1` ${NEXT}.cpt
+mv file.xtc ${CURR}.xtc
+mv log.lammps ${CURR}.log
+cp data.end ${CURR}.end
+
+# archive produced data and restart files for the next run
+parchive move ${CURR}.xtc ${CURR}.log ${CURR}.end ${NEXT}.cpt restart.*
+if [ $? -ne 0 ]; then exit 1; fi  # exit if this fails
+
+# clean already archived and other temporary data
+rm -f ${CURR}.* ${NEXT}.* *_prev* restart.*
+
+# resubmit job
+presubmit
+
+

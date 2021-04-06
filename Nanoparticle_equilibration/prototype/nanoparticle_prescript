@@ -1,0 +1,14 @@
+Particle_type: 4
+Output_type: 1
+Num_of_beads: sed_nano
+Scale: sed_scale
+Lammps_offset: 0
+c: sed_c
+Number_of_ligands: sed_lig
+Box: -sed_box sed_box -sed_box sed_box -sed_box sed_box 
+Position_shift: 0 0 sed_z
+Center
+Seed: 1
+Atom_type: 4
+Mol_tag: 2
+Janus: 1 1 0.5

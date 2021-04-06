@@ -1,0 +1,54 @@
+variable head internal 0.95
+variable head_cut equal ${head}*1.12246204831
+
+variable tail internal 1.0
+variable tail_cut equal ${tail}*1.12246204831
+
+variable nano internal 1.0
+variable nano_cut equal ${tail}*1.12246204831
+
+variable head_nano equal (${head}+${nano})/2.0
+variable head_nano_cut equal ${head_nano}*1.12246204831
+
+variable atr_str internal sed_interaction
+
+#
+#	PAIR COEFFICIENTS
+#
+# 1 == HEAD, 2 == TAIL, 3 == RECEPTOR HEAD
+#
+# The lj/cut styles compute the standard 12/6 Lennard-Jones potential (WCA)
+#                          epsilon, sigma, cutoff1
+pair_coeff      1 1 lj/cut 1.0 ${head}  ${head_cut} 	# Lipid HEAD-HEAD
+pair_coeff      2 2 lj/cut 1.0 ${tail}  ${tail_cut}  	# Lipid TAIL-TAIL
+pair_coeff      3 3 lj/cut 1.0 ${head}  ${head_cut} 	# Receptor HEAD-HEAD
+pair_coeff      4 4 lj/cut 1.0 ${nano}  ${nano_cut}      # Nano
+pair_coeff      5 5 lj/cut 1.0 ${nano}  ${nano_cut}      # Ligand
+
+pair_coeff      1 2 lj/cut 1.0 ${head}  ${head_cut} 	# HEAD - TAIL, Defined by deserno
+pair_coeff      1 3 lj/cut 1.0 ${head}  ${head_cut} 	# HEAD-HEAD
+pair_coeff      1 4 lj/cut 1.0 ${head_nano}  ${head_nano_cut}
+pair_coeff      1 5 lj/cut 1.0 ${head_nano}  ${head_nano_cut}
+
+pair_coeff      2 3 lj/cut 1.0 ${head}  ${head_cut} 	# HEAD - TAIL, Defined by deserno
+pair_coeff      2 4 lj/cut 1.0 ${nano}  ${nano_cut}
+pair_coeff      2 5 lj/cut 1.0 ${nano}  ${nano_cut}
+
+pair_coeff      3 4 lj/cut 1.0 ${head_nano}  ${head_nano_cut}
+pair_coeff      3 5 lj/cut 1.0 ${head_nano}  ${head_nano_cut}
+
+pair_coeff      4 5 lj/cut 1.0 ${nano}  ${nano_cut}
+
+# cos^2 potential
+pair_coeff      2 2 cosatt 1.0 1.122462048309373 1.6	 # TAIL-TAIL, Defined by deserno
+pair_coeff      3 5 cosatt ${atr_str} ${head_nano_cut} 0.5
+
+#
+#	BOND COEFFICIENTS
+#
+# K (energy/distance^2), R0 (distance), epsilon (energy), sigma (distance)
+bond_coeff      1 fene 30.0 1.5 0.95 1.0 # TAIL-HEAD BOND
+bond_coeff      2 fene 30.0 1.5 1.0 1.0 # TAIL-TAIL BOND
+
+#                          K (energy/distance^2) r0 (distance)
+bond_coeff      3 harmonic 5 4 # for deserno model
