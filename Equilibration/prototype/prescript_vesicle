@@ -1,0 +1,10 @@
+Operation_type: 2
+Radius: sed_radius
+Out_type: 1
+Num_lipids: sed_lipids
+Out_file: data.ves
+Mol_tag: 1
+Lammps_offset: 0 
+Number_of_receptors: sed_receptors
+Box: -30 30 -30 30 -30 30 
+Position_shift: 0 0 0

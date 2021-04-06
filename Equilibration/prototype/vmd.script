@@ -1,0 +1,41 @@
+proc setlook {} {
+rotate stop
+color Display Background white
+display projection orthographic
+mol material Edgy
+mol selection "name 1"
+mol representation VDW 5 10.000000
+mol color ColorID 23
+mol addrep 0
+mol material Edgy
+mol selection "name 2"
+mol representation VDW 5 10.000000
+mol color ColorID 21
+mol addrep 0
+mol material Edgy
+mol selection "name 3"
+mol representation VDW 5 10.000000
+mol color ColorID 3
+mol addrep 0
+mol material Edgy
+mol selection "name 4"
+mol representation VDW 5 10.000000
+mol color ColorID 4
+mol addrep 0
+mol material Edgy
+mol selection "name 5"
+mol representation VDW 5 10.000000
+mol color ColorID 16
+mol addrep 0
+axes location off
+}
+
+topo readlammpsdata data.ves
+mol addfile file.xtc	 
+
+set sel [atomselect top "name 1 2 3 4 5"]
+$sel set radius 1.0
+
+pbc box
+#pbc wrap -all
+setlook
