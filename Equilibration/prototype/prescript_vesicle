@@ -6,5 +6,5 @@ Out_file: data.ves
 Mol_tag: 1
 Lammps_offset: 0 
 Number_of_receptors: sed_receptors
-Box: -30 30 -30 30 -30 30 
+Box: -sed_box sed_box -sed_box sed_box -sed_box sed_box 
 Position_shift: 0 0 0

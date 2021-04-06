@@ -20,7 +20,7 @@ do
     cp prototype/* $folder/
 
     cd $folder
-      ./prep.sh $1 $lcount $rcount $rad
+      ./prep.sh $1 $lcount $rcount $rad $4
     cd ..
   done  
 done
@@ -29,7 +29,8 @@ done
 r_run=100000 #steps should work fine
 lipid_count=1000
 radius=10
+box=30
 
-create $r_run "$lipid_count" "$radius"
+create $r_run "$lipid_count" "$radius" $box
 
 

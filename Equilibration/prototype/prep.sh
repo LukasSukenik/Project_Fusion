@@ -22,13 +22,16 @@ function gen_ves
   lipid_count=$3
   receptor_count=$4 
   radius=$5
+  box=$6
 
   cp $1 $2
   sed -i -e 's/sed_lipids/'"$lipid_count"'/g' $2
   sed -i -e 's/sed_receptors/'"$receptor_count"'/g' $2
   sed -i -e 's/sed_radius/'"$radius"'/g' $2
+  sed -i -e 's/sed_box/'"$box"'/g' $2
+  sed_box
 }
 
-gen_in "in.prescript_equi" "in.equi" $1 $4
-gen_ves prescript_vesicle vesicle $2 $3 $4
+gen_in "in.prescript_equi" "in.equi" $1 $5
+gen_ves prescript_vesicle vesicle $2 $3 $4 $5
 ./gen_membrane vesicle
