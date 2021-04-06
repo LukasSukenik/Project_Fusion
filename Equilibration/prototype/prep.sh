@@ -29,7 +29,6 @@ function gen_ves
   sed -i -e 's/sed_receptors/'"$receptor_count"'/g' $2
   sed -i -e 's/sed_radius/'"$radius"'/g' $2
   sed -i -e 's/sed_box/'"$box"'/g' $2
-  sed_box
 }
 
 gen_in "in.prescript_equi" "in.equi" $1 $5
