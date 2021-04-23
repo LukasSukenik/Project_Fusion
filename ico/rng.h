@@ -1,6 +1,8 @@
 #ifndef RNG_H
 #define RNG_H
 
+#include <random>
+
 typedef long double myFloat;
 
 std::mt19937_64 rng;

@@ -1,13 +1,3 @@
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <cmath>
-#include <limits>
-
-#include <cstdlib>
-#include <algorithm>
-#include <random>
-
 #include "rng.h"
 #include "icosahedron.h"
 #include "oblatespheroid.h"
@@ -19,9 +9,20 @@
 #include "chain.h"
 #include "slab.h"
 
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <cmath>
+#include <limits>
+
+#include <cstdlib>
+#include <algorithm>
+
+#include <vector>
+
+using namespace std;
+
 void helpMessage();
-
-
 
 int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(same as Y) $beg $end, $position in Z, $offset
 {
@@ -52,31 +53,22 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
 
         cerr << data.in.toString() << endl;
 
-        if( !data.in.infile.empty() )
+        if( data.isDefined() )
         {
-            data.load(data.in.infile);
-            data.rescale(data.in.scale);
-            data.move(data.in.com_pos);
-            if( data.in.mol_tag != -1)
-            {
-                data.mol_tag(data.in.mol_tag);
-            }
-            if(data.in.nanoup)
-            {
-                data.rotate();
-            }
-            if(data.in.z_stack)
-            {
-                data.z_stack();
-            }
+            data.load(data.in.infile);      // Load
+            data.rescale(data.in.scale);    // Rescale
+            data.move(data.in.com_pos);     // Move by vector defined in input file
+            data.mol_tag(data.in.mol_tag);  // Change mol_tag of all particles to one set by input
+            data.align(data.in.align, data.in.align2);      // align mol_tag particles in z axis and XY plane
+            data.impact(data.in.ivx);
             data.offset(data.all_beads.size());
-            data.add();
-
 
             if(data.in.center)
             {
                 data.center();
             }
+
+            data.add();
         }
         else
         {
