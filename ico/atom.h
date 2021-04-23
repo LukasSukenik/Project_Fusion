@@ -186,6 +186,7 @@ public:
     }
 
     inline void rotate(Atom& axis, myFloat angle) {
+        angle*=0.5;
         double cosAngle = cos(angle);
         double sinAngle = sin(angle);
         double t2,t3,t4,t5,t6,t7,t8,t9,t10,newx,newy,newz;
