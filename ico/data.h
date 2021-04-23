@@ -73,11 +73,12 @@ public:
     int mol_tag=-1;
     int atom_type=1;
     bool center=false;
-    bool nanoup=false;
-    bool z_stack=false;
+    int align=-1;
+    int align2=-1;
+    Atom ivx = Atom(0.0, 0.0, 0.0);
     Atom boxm = Atom(-1,-1,-1);
     Atom boxp = Atom(-1,-1,-1);
-    Atom com_pos;
+    Atom com_pos = Atom(0.0, 0.0, 0.0);
     Atom janus = Atom(1,1,1);
     string infile;
 
@@ -141,14 +142,13 @@ public:
             if( what.compare("Position_shift:") == 0 )  { ss >> com_pos.x >> com_pos.y >> com_pos.z; }
             if( what.compare("Load_file:") == 0 )  { ss >> infile; }
             if( what.compare("Center") == 0 )  { center=true; }
-            if( what.compare("NanoUP") == 0 )  { nanoup=true; }
-            if( what.compare("z_stack") == 0 )  { z_stack=true; }
+            if( what.compare("Align:") == 0 )  { ss >> align >> align2;  }
+            if( what.compare("Impact_vector:") == 0 )  { ss >> ivx.x >> ivx.y >> ivx.z; }
             if( what.compare("Janus:") == 0 )  { ss >> janus.x >> janus.y >> janus.z; }
             if( what.compare("Seed:") == 0 )  { ss >> seed; rng.seed(seed); }
 
             if( what.compare("Mol_tag:") == 0 ) { ss >> mol_tag; }
             if( what.compare("Atom_type:") == 0 ) { ss >> atom_type; }
-
 
             if( what.compare("Beads_lj/cut:") == 0 )
             {
@@ -203,13 +203,14 @@ public:
         atom_type=1;
 
         center=false;
-        nanoup=false;
-        z_stack=false;
+        align=-1;
+        align2=-1;
 
         boxm=Atom(-1,-1,-1);
         boxp=Atom(-1,-1,-1);
-        com_pos=Atom(-1,-1,-1);
+        com_pos=Atom(0.0, 0.0, 0.0);
         janus=Atom(1,1,1);
+        ivx=Atom(0.0, 0.0, 0.0);
 
         infile.clear();
         bparam.clear();
@@ -277,6 +278,13 @@ public:
                 all_sigma[i][j] = 0.0;
     }
 
+    bool isDefined()
+    {
+        if(!in.infile.empty())
+            return true;
+        return false;
+    }
+
     int getMaxMolTag()
     {
         int max=0;
@@ -294,61 +302,142 @@ public:
     {
         for(Atom& item : temp_beads)
             item += move;
-        cerr << "move done" << endl;
+        cerr << "move " << move.x << " " << move.y << " " << move.z << " done" << endl;
     }
 
-    Atom center_of_mass(int mtag=-1)
+    /**
+     * @brief center_of_mass - function computes Center-Of-Mass (COM) of particles with a givem mol_tag
+     * @param mtag - mol_tag of particles for COM calculation, -1 = all particles regarles of mol_tag
+     */
+    Atom center_of_mass(int mtag=-1, int start=-1, int stop=-1)
     {
         int count=0;
+        int total=0;
         Atom cm;
         for(Atom& item : temp_beads)
         {
-            if(item.mol_tag == mtag || mtag == -1)
+            if( (item.mol_tag == mtag || mtag == -1) && total >= start && (total < stop || stop == -1) )
             {
                 cm += item;
                 ++count;
             }
+
+            if(item.mol_tag == mtag || mtag == -1)
+                ++total;
         }
         cm *= 1.0/count;
         return cm;
     }
 
-    void z_stack()
+    void impact(Atom ivx)
     {
-        double z_max = 0.0;
-        double z_min = 0.0;
-
-        for(Atom& item : all_beads)
+        if(ivx.size() > 0.1)
         {
-            if(z_max < item.z)
-                z_max = item.z;
-        }
+            Atom impact = Atom(0.0, 0.0, 0.0);
 
-        for(Atom& item : temp_beads)
-        {
-            if(z_min > item.z)
-                z_min = item.z;
-        }
+            // move the liposome to COM
+            Atom com = center_of_mass();
+            com *= -1;
+            move(com);
 
-        move(Atom(0,0, z_max - z_min +1));
+            // Define nanoparticle and liposomes dimensions
+            double z_min_lipo3 = 9999; // liposome we are adding
+            double y_min_lipo3 = 9999; // liposome we are adding
+            double y_max_lipo3 = -9999; // liposome we are adding
+            double z_max_nano = -9999;  // nanoparticle
+            double z_max_lipo1 = -9999; // bound liposome
+            double y_max_lipo1 = -9999; // bound liposome
+            double y_min_lipo1 = 9999; // bound liposome
+
+
+            for(Atom& item : temp_beads)
+            {
+                if(z_min_lipo3 > item.z)
+                    z_min_lipo3 = item.z;
+                if(y_min_lipo3 > item.y)
+                    y_min_lipo3 = item.y;
+                if(y_max_lipo3 < item.y)
+                    y_max_lipo3 = item.y;
+            }
+
+            for(Atom& item : all_beads)
+            {
+                if(y_min_lipo1 > item.y && item.mol_tag == 1)
+                    y_min_lipo1 = item.y;
+                if(y_max_lipo1 < item.y && item.mol_tag == 1)
+                    y_max_lipo1 = item.y;
+                if(z_max_lipo1 < item.z && item.mol_tag == 1)
+                    z_max_lipo1 = item.z;
+                if(z_max_nano < item.z && item.mol_tag == 2)
+                    z_max_nano = item.z;
+            }
+
+            // z impact
+            //z_impact.z = z_max_nano - z_min_lipo3 + 3;
+
+            // y impact
+            //y_impact.y = - y_max_lipo3 - z_max_nano -1;
+            //y_impact.z = z_max_lipo1 - z_min_lipo3 + 0.5;
+
+            ivx.normalise();
+            impact.y = (- y_max_lipo3 - z_max_nano -1) * ivx.y;
+            impact.z = (z_max_lipo1 - z_min_lipo3 + 0.5)*(1-ivx.z) + ivx.z*(z_max_nano - z_min_lipo3 + 3);
+            move(impact);
+
+            cerr << "Liposome moved by " << impact.x << " " << impact.y << " " << impact.z << endl;
+        }
     }
 
-    void rotate()
+    void align(int mtag, int mtag2)
     {
-        center(); // COM vesicle = 0,0,0
-        Atom cm_nano = center_of_mass(2);
-        Atom z_axis = Atom(0,0,1);
-        Atom rot_axis = z_axis.cross(cm_nano);
-        double angle = asin( rot_axis.size() / cm_nano.size() ); // a cross b = size a * size b * sin Angle
-        rot_axis.normalise();
-
-        for(Atom& item : temp_beads)
+        if( mtag != -1 && mtag2 != -1 )
         {
-            item.rotate(rot_axis, -angle/2);
-        }
-        cm_nano = center_of_mass(2);
+            center(mtag); // COM vesicle = 0,0,0
+            Atom x_axis = Atom(1,0,0);
+            Atom x_axis_negative = Atom(-1,0,0);
+            Atom z_axis = Atom(0,0,-1);
 
-        cerr << cm_nano.x << " " << cm_nano.y << " " << cm_nano.z << endl;
+            //
+            // Rotate mtag (nanoparticle beads) to align with x_axis
+            //
+            int count = countMoltag(mtag, temp_beads);          // number of mtag (intended for nanoparticle beads)
+            Atom nano1 = center_of_mass(mtag, 0, count/4);      // first 1/4 COM of mtag beads
+            Atom nano2 = center_of_mass(mtag, 1+3*count/4, count); // last 1/4 COM of mtag beads
+            Atom nano_axis = nano1-nano2;                       // Axis of mtag beads
+            nano_axis.normalise();                              // normalise vector for correct axis and rotation
+            Atom rot_axis = nano_axis-x_axis;                   // we want to align mtag to x axis - calculate axis between them
+            rot_axis.normalise();                               // normalise for rotation algo
+            for(Atom& item : temp_beads)
+            {
+                item.rotate(rot_axis, 3.14159265359);       // rotate 180deg = 3.1415 radians, rad to deg = 57.2958
+            }
+
+            //
+            // Rotate mtag, keep it aligned with x axis, but rotate so that COM of mtag2 is (*,*,0) = centered around z axis
+            //
+            Atom com_mtag2 = center_of_mass(mtag2);
+            com_mtag2.x = 0.0;
+            com_mtag2.normalise();
+            double angle = acos( com_mtag2.dot(z_axis) );
+            double clockwise = (com_mtag2.cross(z_axis)).x ;
+
+            if(clockwise > 0.0)
+            {
+                for(Atom& item : temp_beads)
+                {
+                    item.rotate(x_axis, angle);       //
+                }
+            } else
+            {
+                for(Atom& item : temp_beads)
+                {
+                    item.rotate(x_axis_negative, angle);       //
+                }
+            }
+            //com_mtag2 = center_of_mass(mtag2);
+            //cerr << com_mtag2.x << " " << com_mtag2.y << " " << com_mtag2.z << endl;
+            cerr << "Aligned to x axis and z axis" << endl;
+        }
     }
 
     void add()
@@ -387,9 +476,13 @@ public:
 
     void mol_tag(int mtag)
     {
-        for(Atom& item : temp_beads)
+        if(in.mol_tag != -1)
         {
-            item.mol_tag = mtag;
+            for(Atom& item : temp_beads)
+            {
+                item.mol_tag = mtag;
+            }
+            cerr << "All beads changed to mol_tag = " << mtag << endl;
         }
     }
 
@@ -401,6 +494,7 @@ public:
             cerr << "[" << i+1 << "][" << i+1 << "] = "  << all_sigma[i][i] << endl;
         }
     }
+
 
     void center(int mtag=-1)
     {
@@ -471,7 +565,7 @@ public:
         ss << moltags.size() << " molTypes:" << endl;
         for(int moltg=0; moltg< moltags.size(); ++moltg)
         {
-            ss << "Molecule " << moltags[moltg] << " " << countMolecule(moltags[moltg]) << endl;
+            ss << "Molecule " << moltags[moltg] << " " << countMoltag(moltags[moltg], all_beads) << endl;
         }
 
         return ss.str();
@@ -490,12 +584,12 @@ public:
         return count;
     }
 
-    int countMolecule( int molTag)
+    int countMoltag(int mTag, vector< Atom >& container)
     {
         int count = 0;
-        for(Atom& item : all_beads)
+        for(Atom& item : container)
         {
-            if( item.mol_tag == molTag)
+            if( item.mol_tag == mTag)
             {
                 ++count;
             }
