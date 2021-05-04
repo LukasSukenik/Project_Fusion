@@ -21,7 +21,7 @@ public:
         cout << "Vesicle radius: " << in.radius << ", number of lipids: " << in.num_lipids << endl;
         int samples = in.num_lipids;
 
-        const double frac = 0.1;
+        double frac = 1.0 / in.radius;
         int old_samples;
         const double PI = 3.141592653589793;
         double offset = 2.0/samples;
@@ -29,6 +29,7 @@ public:
         double x,y,z,r,phi;
         int num=1;
 
+        // generate uniform random points on sphere surface + turn them into lipids
         for(int i=0; i<samples; ++i) {
             z = ((i * offset) - 1) + (offset / 2);
             r = sqrt(1 - z*z);
@@ -38,9 +39,9 @@ public:
             x = cos(phi) * r;
             y = sin(phi) * r;
 
-            lipids.push_back( Lipid(Particle(num + in.offset,   in.mol_tag, HEAD, x,            y,            z),
-                                    Particle(num+1 + in.offset, in.mol_tag, TAIL, x + x*frac,   y + y*frac,   z + z*frac),
-                                    Particle(num+2 + in.offset, in.mol_tag, TAIL, x + 2*x*frac, y + 2*y*frac, z + 2*z*frac) ) );
+            lipids.push_back( Lipid(Particle(num + in.lammps_offset,   in.mol_tag, HEAD, x,            y,            z),
+                                    Particle(num+1 + in.lammps_offset, in.mol_tag, TAIL, x + x*frac,   y + y*frac,   z + z*frac),
+                                    Particle(num+2 + in.lammps_offset, in.mol_tag, TAIL, x + 2*x*frac, y + 2*y*frac, z + 2*z*frac) ) );
             num += 3;
         }
 
@@ -76,12 +77,13 @@ public:
             x = cos(phi) * r;
             y = sin(phi) * r;
 
-            lipids.push_back( Lipid(Particle(num + in.offset,   in.mol_tag, HEAD, x + 5*x*frac, y + 5*y*frac, z + 5*z*frac),
-                                    Particle(num+1 + in.offset, in.mol_tag, TAIL, x + 4*x*frac, y + 4*y*frac, z + 4*z*frac),
-                                    Particle(num+2 + in.offset, in.mol_tag, TAIL, x + 3*x*frac, y + 3*y*frac, z + 3*z*frac) ) );
+            lipids.push_back( Lipid(Particle(num + in.lammps_offset,   in.mol_tag, HEAD, x + 5*x*frac, y + 5*y*frac, z + 5*z*frac),
+                                    Particle(num+1 + in.lammps_offset, in.mol_tag, TAIL, x + 4*x*frac, y + 4*y*frac, z + 4*z*frac),
+                                    Particle(num+2 + in.lammps_offset, in.mol_tag, TAIL, x + 3*x*frac, y + 3*y*frac, z + 3*z*frac) ) );
             num += 3;
         }
 
+        // Select lipid heads and switch to receptors
         count=0;
         random=0;
         while(count < in.num_rec)
@@ -97,7 +99,6 @@ public:
             }
         }
 
-
         // generate bonds
         for(int i=0; i<lipids.size(); i++) {
             lipids[i].changeN(3*i+1, 1); // Head, tail, tail
@@ -108,8 +109,7 @@ public:
             }
         }
 
-
-
+        // scale + COM pos
         for(unsigned int i=0; i<vec.size(); i++)
         {
             vec[i].x = in.radius*vec[i].x + in.com_x;

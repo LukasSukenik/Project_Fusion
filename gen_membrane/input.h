@@ -27,7 +27,7 @@ public:
     string in_file;
     string out_file;
     int mol_tag;
-    int offset;
+    int lammps_offset;
     int num_rec;
 
     double com_x;
@@ -66,7 +66,7 @@ public:
             if( what.compare("Out_file:") == 0 )       { ss >> out_file; }
             if( what.compare("Mol_tag:") == 0 )        { ss >> mol_tag; }
 
-            if( what.compare("Lammps_offset:") == 0 )   { ss >> offset; }
+            if( what.compare("Lammps_offset:") == 0 )   { ss >> lammps_offset; }
             if( what.compare("Number_of_receptors:") == 0 ) { ss >> num_rec; }
             if( what.compare("Box:") == 0 )             { ss >> box_xm >> box_xp >> box_ym >> box_yp >> box_zm >> box_zp; }
             if( what.compare("Position_shift:") == 0 )  { ss >> com_x >> com_y >> com_z; }
