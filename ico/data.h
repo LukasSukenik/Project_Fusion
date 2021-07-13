@@ -73,8 +73,8 @@ public:
     int mol_tag=-1;
     int atom_type=1;
     bool center=false;
-    int align=-1;
-    int align2=-1;
+    int mtag_1=-1;
+    int mtag_2=-1;
     Atom ivx = Atom(0.0, 0.0, 0.0);
     Atom boxm = Atom(-1,-1,-1);
     Atom boxp = Atom(-1,-1,-1);
@@ -142,7 +142,7 @@ public:
             if( what.compare("Position_shift:") == 0 )  { ss >> com_pos.x >> com_pos.y >> com_pos.z; }
             if( what.compare("Load_file:") == 0 )  { ss >> infile; }
             if( what.compare("Center") == 0 )  { center=true; }
-            if( what.compare("Align:") == 0 )  { ss >> align >> align2;  }
+            if( what.compare("Align:") == 0 )  { ss >> mtag_1 >> mtag_2;  }
             if( what.compare("Impact_vector:") == 0 )  { ss >> ivx.x >> ivx.y >> ivx.z; }
             if( what.compare("Janus:") == 0 )  { ss >> janus.x >> janus.y >> janus.z; }
             if( what.compare("Seed:") == 0 )  { ss >> seed; rng.seed(seed); }
@@ -203,8 +203,8 @@ public:
         atom_type=1;
 
         center=false;
-        align=-1;
-        align2=-1;
+        mtag_1=-1;
+        mtag_2=-1;
 
         boxm=Atom(-1,-1,-1);
         boxp=Atom(-1,-1,-1);
@@ -434,8 +434,12 @@ public:
                     item.rotate(x_axis_negative, angle);       //
                 }
             }
-            //com_mtag2 = center_of_mass(mtag2);
-            //cerr << com_mtag2.x << " " << com_mtag2.y << " " << com_mtag2.z << endl;
+
+            //
+            // Detect nanoparticle patch preference
+            //
+
+
             cerr << "Aligned to x axis and z axis" << endl;
         }
     }

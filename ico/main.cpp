@@ -26,26 +26,26 @@ void helpMessage();
 
 int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(same as Y) $beg $end, $position in Z, $offset
 {
-    if( argc == 1 ) {
-        cout << "No input file specified, number of parameters: " << argc << endl;
+    if( argc == 1 || strcmp(argv[1], "-h") == 0 ) {
+        cout << "No input file specified" << endl;
         helpMessage();
         exit(1);
     }
 
     Data data;
     vector<Particle*> nano;
-    nano.push_back( new Icosahedron<Surface>("Icosahedron") );  // 1
-    nano.push_back( new Sphere() );                                                     // 2
-    nano.push_back( new TennisBall() );                                                 // 3
-    nano.push_back( new OblateSpheroid() );                                             // 4
-    nano.push_back( new SpherePatch() );                                                // 5
-    nano.push_back( new Pentamer<PentaSurface>("Icosahedron + PentaSurface" ) );      // 6
-    nano.push_back( new Dodecahedron("Dodecahedron") );  // 7
-    nano.push_back( new Chain() );                                                      // 8
-    nano.push_back( new Slab() );                                                       // 9
-    nano.push_back( new NettedSlab());                                                   // 10
-    nano.push_back( new SphereJanus());                                                   // 11
-    nano.push_back( new Cow());                                                   // 12
+    nano.push_back( new Icosahedron<Surface>("Icosahedron") );                      // 1
+    nano.push_back( new Sphere() );                                                 // 2
+    nano.push_back( new TennisBall() );                                             // 3
+    nano.push_back( new OblateSpheroid() );                                         // 4
+    nano.push_back( new SpherePatch() );                                            // 5
+    nano.push_back( new Pentamer<PentaSurface>("Icosahedron + PentaSurface" ) );    // 6
+    nano.push_back( new Dodecahedron("Dodecahedron") );                             // 7
+    nano.push_back( new Chain() );                                                  // 8
+    nano.push_back( new Slab() );                                                   // 9
+    nano.push_back( new NettedSlab());                                              // 10
+    nano.push_back( new SphereJanus());                                             // 11
+    nano.push_back( new Cow());                                                     // 12
 
     for(int i=1; i<argc; ++i)
     {
@@ -55,11 +55,11 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
 
         if( data.isDefined() )
         {
-            data.load(data.in.infile);      // Load
-            data.rescale(data.in.scale);    // Rescale
+            data.load(data.in.infile);      // Load Data from file "data.in.infile"
+            data.rescale(data.in.scale);    // Rescale atom positions by data.in.scale - usually 1
             data.move(data.in.com_pos);     // Move by vector defined in input file
             data.mol_tag(data.in.mol_tag);  // Change mol_tag of all particles to one set by input
-            data.align(data.in.align, data.in.align2);      // align mol_tag particles in z axis and XY plane
+            data.align(data.in.mtag_1, data.in.mtag_2); // align mol_tag particles in z axis and XY plane
             data.impact(data.in.ivx);
             data.offset(data.all_beads.size());
 
@@ -110,8 +110,17 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
 }
 
 void helpMessage() {
-    cout << "Run binary with filenames that contain the following parameters:" << endl;
+    cout << "./ico filename_1 filename_2" << endl;
 
+    cout << "Keywords:" << endl;
+    cout << "Ouput/Input category:" << endl;
+    cout << "Output_type: 1 = Lammps" << endl;
+    cout << "             0 = XYZ" << endl;
+    cout << "Lammps_offset: integer" << endl;
+    cout << " - offset the generated structure for manual insertion into another lammps structure file" << endl;
+    cout << "Load_file: filename" << endl;
+
+    cout << "\nGenerated structure properties category:" << endl;
     cout << "Particle_type: 1 = Icosahedron" << endl;
     cout << "               2 = Sphere" << endl;
     cout << "               3 = Tennis ball" << endl;
@@ -124,26 +133,33 @@ void helpMessage() {
     cout << "               10 = netted slab of particles" << endl;
     cout << "               11 = Janus sphere" << endl;
     cout << "               12 = xyz file - name cow2.xyz curently" << endl;
+    cout << "Num_of_beads: integer" << endl;
+    cout << " - Particle_type: 1,6,7 = number of beads per edge" << endl;
+    cout << " - other Particle_type = number of beads for entire nanoparticle/structure" << endl;
+    cout << "Scale: floating_point_number - nanoparticle radius" << endl;
+    cout << "c: float " << endl;
+    cout << " - Particle_type: 4 = oblate spheroid < 1, prolate spheroid > 1, 1.0 - ERROR, not defined" << endl;
+    cout << " - Particle_type: 3 = width of patch (0.0 to 2.0)" << endl;
+    cout << "Number_of_ligands: integer" << endl;
+    cout << "Mol_tag: integer" << endl;
+    cout << " - change mol_tag of generated/loaded structure " << endl;
+    cout << "Atom_type: integer" << endl;
+    cout << " - Atom_type of generated structure, if structure has more atom_types they are incremented from provided value " << endl;
+    cout << "Janus: float float float" << endl;
 
-    cout << "Output_type: 1 = Lammps" << endl;
-    cout << "             other = XYZ" << endl;
+    cout << "\nPosition/Box properties category:" << endl;
+    cout << "Box: float float float float float float" << endl;
+    cout << "position_shift: float float float" << endl;
+    cout << "Center = centers particles at 0.0" << endl;
+    cout << "Align: mol_tag_1 mol_tag_2 integer" << endl;
+    cout << " - align mol_tag_1 with x-axis" << endl;
+    cout << " - center mol_tag_2 around z axis" << endl;
+    cout << "Impact_vector: float float float" << endl;
 
-    cout << "Num_of_beads: XXX - for 1,6,7 nano type - number of beads per edge" << endl;
-    cout << "                 - others - number of beads for entire nanoparticle/structure" << endl;
-
-    cout << "Scale: XXX - nanoparticle radius" << endl;
-    cout << "Lammps_offset: 0 - if previous lammps structure exist" << endl;
-    cout << "c: XXX - (oblate spheroid param || tennis ball param || width of patch (0.0 to 2.0)) " << endl;
-    cout << "Number_of_ligands: XXX" << endl;
-    cout << "box: XXX XXX XXX" << endl;
-    cout << "position_shift: XXX XXX XXX" << endl;
-
-    cout << "Load_file:" << endl;
-    cout << "Center:" << endl;
-    cout << "Seed:" << endl;
+    cout << "\nForce-Field category:" << endl;
     cout << "Beads_lj/cut:" << endl;
 
-    cout << "Seed: XXX - for random generator" << endl;
+    cout << "\nSeed: intege = radom generator" << endl;
 }
 
 
