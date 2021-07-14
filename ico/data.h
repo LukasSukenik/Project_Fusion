@@ -388,32 +388,50 @@ public:
         }
     }
 
+    /**
+     * @brief align - align a liposome and nanoparticle
+     * @param mtag - nanoparticle mol_tag
+     * @param mtag2 - liposome mol_tag
+     */
     void align(int mtag, int mtag2)
     {
+        // Test for empty mol_tags
         if( mtag != -1 && mtag2 != -1 )
         {
-            center(mtag); // COM vesicle = 0,0,0
             Atom x_axis = Atom(1,0,0);
             Atom x_axis_negative = Atom(-1,0,0);
             Atom z_axis = Atom(0,0,-1);
 
             //
-            // Rotate mtag (nanoparticle beads) to align with x_axis
+            // Move nanoparticle to center (0,0,0)
             //
-            int count = countMoltag(mtag, temp_beads);          // number of mtag (intended for nanoparticle beads)
-            Atom nano1 = center_of_mass(mtag, 0, count/4);      // first 1/4 COM of mtag beads
+            center(mtag);
+
+            //
+            // Rotate structure so that mtag beads (nanoparticle) align with x_axis
+            // - nanoparticle generated from poles = tips in prolate form, same as in oblate form
+            // -- 1/4 beads from each end identify the poles (tips)
+            //
+            int count = countMoltag(mtag, temp_beads);             // number of mtag (nanoparticle beads)
+            Atom nano1 = center_of_mass(mtag, 0, count/4);         // first 1/4 COM of mtag beads
             Atom nano2 = center_of_mass(mtag, 1+3*count/4, count); // last 1/4 COM of mtag beads
-            Atom nano_axis = nano1-nano2;                       // Axis of mtag beads
-            nano_axis.normalise();                              // normalise vector for correct axis and rotation
-            Atom rot_axis = nano_axis-x_axis;                   // we want to align mtag to x axis - calculate axis between them
-            rot_axis.normalise();                               // normalise for rotation algo
+            Atom nano_axis = nano1-nano2;                          // Axis of mtag beads
+            nano_axis.normalise();                                 // normalise axis vector for correct rotation
+            //
+            // Look at vector_magic.blend for visual example
+            // - rot_axis defined plane is between the nano_axis and x_axis vector
+            // - by rotating the nano_axis vector 180deg in this plane we align in at x_axis_negative exactly
+            //
+            Atom rot_axis = nano_axis-x_axis;
+            rot_axis.normalise();                                  // normalise for rotation algo
             for(Atom& item : temp_beads)
             {
                 item.rotate(rot_axis, 3.14159265359);       // rotate 180deg = 3.1415 radians, rad to deg = 57.2958
             }
 
             //
-            // Rotate mtag, keep it aligned with x axis, but rotate so that COM of mtag2 is (*,*,0) = centered around z axis
+            // Rotate mtag so that COM of mtag2 is (*,*,0) = centered around z axis
+            // - to keep it aligned with x axis, we rotate only around x axis
             //
             Atom com_mtag2 = center_of_mass(mtag2);
             com_mtag2.x = 0.0;
@@ -436,9 +454,33 @@ public:
             }
 
             //
-            // Detect nanoparticle patch preference
+            // TODO: Construct nanoparticle patch, rotate structure so patch points to in +y axis
+            //
+            /*Atom patch_vec;
+            Atom rotate_axis;
+            double rotate_angle;*/
+
+            //
+            // Class Atom has variable x,y,z. You can access them via . (dot)
+            // example: patch_vec.y
+            //
+            // there are a number of function within class Atom that you can use. -, +, *, /, dot, cross.
+            // If you are unsure what they do look at how they are programmed in class Atom
             //
 
+            //
+            // function center_of_mass(mol_tag) returns position of center of mass. This is stored in class Atom
+            //
+            //Atom mtag2_COM = center_of_mass(mtag2);
+
+            //
+            // Rotates structure around rotate_axis by angle rotate_angle
+            //
+            /*rotate_axis.normalise();
+            for(Atom& item : temp_beads)
+            {
+                item.rotate(rotate_axis, rotate_angle);       //
+            }*/
 
             cerr << "Aligned to x axis and z axis" << endl;
         }
@@ -500,6 +542,10 @@ public:
     }
 
 
+    /**
+     * @brief center - moves structure, so that center_of_mass is (0,0,0)
+     * @param mtag
+     */
     void center(int mtag=-1)
     {
         if(! temp_beads.empty())
@@ -507,7 +553,7 @@ public:
             Atom cm = center_of_mass(mtag);
             cm*=-1.0;
             move( cm );
-            cerr << "center done" << endl;
+            cerr << "center of " << mtag << " done" << endl;
         }
         else
         {
