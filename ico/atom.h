@@ -43,24 +43,24 @@ public:
 class Atom{
 public:
     //
-    // Lammps related
+    // Lammps define Atom/Particle
     //
-
-
     myFloat x=0,y=0,z=0;
     double q=0;
-    int nx=0,ny=0,nz=0; // 0, 0, 0
+    int nx=0,ny=0,nz=0;
 
-    int N=1; // 1 - infi
+    int N=1;
     int type=0;
-    int mol_tag = 0; // (N+1)%1000
-
+    int mol_tag = 0;
 
     //
     // not used for output
     //
     int to_type=-1; // used in dodecahedron to change the type after bonds are generated - design mistake
 
+    //
+    // Constructors
+    //
     Atom() : to_type(-1) {}
     Atom(myFloat x, myFloat y, myFloat z, int type=0): x(x), y(y), z(z), type(type), to_type(-1) {}
     Atom(myFloat x, myFloat y, myFloat z, int type, int mol_tag): x(x), y(y), z(z), type(type), mol_tag(mol_tag), to_type(-1) {}

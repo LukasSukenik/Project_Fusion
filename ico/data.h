@@ -76,6 +76,7 @@ public:
     int mtag_1=-1;
     int mtag_2=-1;
     Atom ivx = Atom(0.0, 0.0, 0.0);
+    bool fit = false;
     Atom boxm = Atom(-1,-1,-1);
     Atom boxp = Atom(-1,-1,-1);
     Atom com_pos = Atom(0.0, 0.0, 0.0);
@@ -142,6 +143,7 @@ public:
             if( what.compare("Position_shift:") == 0 )  { ss >> com_pos.x >> com_pos.y >> com_pos.z; }
             if( what.compare("Load_file:") == 0 )  { ss >> infile; }
             if( what.compare("Center") == 0 )  { center=true; }
+            if( what.compare("Fit") == 0 )  { fit=true; }
             if( what.compare("Align:") == 0 )  { ss >> mtag_1 >> mtag_2;  }
             if( what.compare("Impact_vector:") == 0 )  { ss >> ivx.x >> ivx.y >> ivx.z; }
             if( what.compare("Janus:") == 0 )  { ss >> janus.x >> janus.y >> janus.z; }
@@ -203,6 +205,7 @@ public:
         atom_type=1;
 
         center=false;
+        fit = false;
         mtag_1=-1;
         mtag_2=-1;
 
@@ -329,6 +332,10 @@ public:
         return cm;
     }
 
+    /**
+     * @brief impact - Deprecated, don't use
+     * @param ivx
+     */
     void impact(Atom ivx)
     {
         if(ivx.size() > 0.1)
@@ -389,6 +396,45 @@ public:
     }
 
     /**
+     * @brief fit - positions the loaded/generated structure next to previosly generated/loadedd structure
+     * - used for ideal collision position of two liposomes and a nanoparticle
+     * see Fit_function.blend, need blender 2.9
+     */
+    void fit()
+    {
+        return;
+        //
+        // Construct an algorithm for positioning the second liposome in an ideal collision position.
+        // - I think something as shown in Fit_function.blend will work fine, but feel free to innovate
+        //
+        // Moving the structure is already implemented in move(Atom vec) function, example below
+        // Calculating overlap is simple as well, example below
+        //
+
+        // Atom displace(0, 20, 20); // class Atom works as a vector as well.
+        // move(displace); displace liposome2 by vector displace,
+
+        //for(Atom& item : temp_beads) // loop over liposome2
+        //for(Atom& item : all_beads) // loop over liposome+nanoparticle structure
+        double distance_squared; // we are using distance squared because it takes less resources -> we are not calculating the square root
+        double too_small = 1.4; // maybe bigger, smaller? Best to eyeball it for vmd once you make it semi-functional
+        for(Atom& lip2 : temp_beads)
+        {
+            for(Atom& nano_lip : all_beads)
+            {
+                if(nano_lip.mol_tag == 2) // 2 is nanoparticle in our use case, 1 is the liposome
+                {
+                    distance_squared = lip2.distSQ(nano_lip); // assume overlap if distance squared too small
+                    if(distance_squared < too_small)
+                    {
+                        cerr << "Overlap!" << endl;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * @brief align - align a liposome and nanoparticle
      * @param mtag - nanoparticle mol_tag
      * @param mtag2 - liposome mol_tag
@@ -418,7 +464,7 @@ public:
             Atom nano_axis = nano1-nano2;                          // Axis of mtag beads
             nano_axis.normalise();                                 // normalise axis vector for correct rotation
             //
-            // Look at vector_magic.blend for visual example
+            // Look at vector_magic.blend for visual example, need blender 2.9
             // - rot_axis defined plane is between the nano_axis and x_axis vector
             // - by rotating the nano_axis vector 180deg in this plane we align in at x_axis_negative exactly
             //
@@ -995,19 +1041,19 @@ void Data::loadBox()
 
     for(unsigned int i=0; i<file_head.size(); i++) {
         //cout << file_head[i].str << endl;
-        if(strstr(file_head[i].str, "xlo xhi") != NULL) {
+        if(strstr(file_head[i].str, "xlo xhi") != nullptr) {
             str << file_head[i].str;
             str >> box[0] >> box[1];
             continue;
         }
 
-        if(strstr(file_head[i].str, "ylo yhi") != NULL) {
+        if(strstr(file_head[i].str, "ylo yhi") != nullptr) {
             str2 << file_head[i].str;
             str2 >> box[2] >> box[3];
             continue;
         }
 
-        if(strstr(file_head[i].str, "zlo zhi") != NULL) {
+        if(strstr(file_head[i].str, "zlo zhi") != nullptr) {
             str3 << file_head[i].str;
             str3 >> box[4] >> box[5];
             continue;

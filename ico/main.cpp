@@ -60,10 +60,15 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
             data.move(data.in.com_pos);     // Move by vector defined in input file
             data.mol_tag(data.in.mol_tag);  // Change mol_tag of all particles to one set by input
             data.align(data.in.mtag_1, data.in.mtag_2); // align mol_tag particles in z axis and XY plane
-            data.impact(data.in.ivx);
+
             data.offset(data.all_beads.size());
 
-            if(data.in.center)
+            if( data.in.fit )
+            {
+                data.fit();
+            }
+
+            if( data.in.center )
             {
                 data.center();
             }
@@ -155,6 +160,9 @@ void helpMessage() {
     cout << " - align mol_tag_1 with x-axis" << endl;
     cout << " - center mol_tag_2 around z axis" << endl;
     cout << "Impact_vector: float float float" << endl;
+    cout << "Fit" << endl;
+    cout << " - positions the loaded/generated structure next to previosly generated/loadedd structure" << endl;
+    cout << " - used for ideal collision position of two liposomes and a nanoparticle" << endl;
 
     cout << "\nForce-Field category:" << endl;
     cout << "Beads_lj/cut:" << endl;
