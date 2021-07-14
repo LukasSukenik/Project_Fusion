@@ -36,25 +36,26 @@ function gen_ff
 function gen_file
 {
   boxx=$3
-  iv_y=$4
-  iv_z=$5
 
   cp $1 $2
   sed -i -e 's/sed_box/'"$boxx"'/g' $2
-  sed -i -e 's/sed_ivy/'"$iv_y"'/g' $2
-  sed -i -e 's/sed_ivz/'"$iv_z"'/g' $2
 }
 
 
 run_steps=$1
 strength=$2
 box=$5
-ivy=$6
-ivz=$7
+ivy=-1
+ivz=-1
 
 gen_file load_equi_nano_prescript load_equi_nano $box
-gen_file load_ves2_prescript load_ves2 $box $ivy $ivz
+gen_file load_ves2_prescript load_ves2 $box
+
+#
+# Get impact vector ivy and ivz from generated structure
+#
 ./ico load_equi_nano load_ves2 > data.start
+
 gen_in "in.prescript_production" "in.production" $run_steps $ivy $ivz
 gen_in "in.prescript_restart" "in.restart" $run_steps
 gen_ff "force_field_prescript" "force_field" $strength

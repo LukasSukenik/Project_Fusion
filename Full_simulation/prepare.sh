@@ -34,11 +34,9 @@ interaction=2
 scale=4
 prolatenes=3 # CANT use 1.0 -> 1.001
 box=45
-### Impact vector - only y and z elements
-ivy=1
-ivz=0.2 
+### Impact vector - calculated by ico binary
 
-create $r_run $radius $interaction $prolatenes $scale $box $ivy $ivz
+create $r_run $radius $interaction $prolatenes $scale $box
 
 
 
