@@ -2,15 +2,30 @@ proc setlook {} {
 rotate stop
 color Display Background white
 display projection orthographic
-mol material Edgy
-mol selection "all"
+mol material AOChalky
+mol selection "resid 1"
 mol representation VDW 0.5 10.000000
-mol color name
+mol color colorID 23
 mol addrep 0
-axes location off
+mol material AOChalky
+mol selection "resid 2"
+mol representation VDW 0.5 10.000000
+mol color colorID 4
+mol addrep 0
+mol material AOChalky
+mol selection "resid 2 && name 5"
+mol representation VDW 0.5 10.000000
+mol color colorID 16
+mol addrep 0
+mol material AOChalky
+mol selection "resid 3"
+mol representation VDW 0.5 10.000000
+mol color colorID 18
+mol addrep 0
+#axes location off
 }
 
-topo readlammpsdata data.ves_nano 
+topo readlammpsdata data.start
 
 set sel [atomselect top "all"]
 $sel set radius 1.0
