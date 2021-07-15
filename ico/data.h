@@ -434,6 +434,10 @@ public:
         }
 
         //
+        // Rotating a structure is shown in align function
+        //
+
+        //
         // Finally Calculate impact vector and print it out into a file, then load in in prep.sh script
         // tutorial for input/output in c++ https://www.cplusplus.com/doc/tutorial/files/
         //
