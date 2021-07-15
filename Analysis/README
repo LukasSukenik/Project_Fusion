@@ -1,0 +1,45 @@
+#####
+# 1 # Towards the design of fusogenic nanoparticle
+#####
+
+Idea:
+Liposomes fuse via a fusion pore 
+- show how decreased hydrophobic interaction and/or increased hydrophobic interaction fluctuations make it more likely for fusion pore to occur
+
+Simulations:
+Design nanoparticle by size, prolateness, strength if nanoparticle-liposome interation for best fusion properties
+- meaning are best in creating properties/structures that promote the formation of fusion pore
+
+Analysis:
+Alternative 1:
+In each frame from trajectory calculate hydrophobic energy per lipid tail particle
+- scale this value by the average hydrophobic energy in flat membrane - we want values in range (1,0)
+-- differentiate between bead position in lipid molecule - head-tail_1-tail_2
+- then convert the relevant part of xtc trajectory to pdb file trajectory
+-- the hydrophobic energy info will be written in beta factor column and used as color in vmd
+Pros: Easy to implement
+Cons: Splits the membrane into 4 layers
+- better if it is just 1 or 1 per leaflet layer
+- but maybe it will be necessary to do it in 4 layers depending on results
+
+Alternative 2:
+- bin the membrane - by size of hydrophobic interaction cutoff, maybe more due to curve membrane
+-- curved membrane will complicate stuff - will require calculating with "wedges"
+- assign hydrophobic cumulative energy of each lipid particle within bin
+-- consider pairs of particles instead of single particles
+--- if each particle is in different bin, contribute to each with only half
+Pros: Simpler figure
+Cons: difficult to implement
+The change and fluctuation in hydrophobic energy may be small when averaged in such a way
+
+This analyses will be done using in-house "ico" software. On my TODO list.
+#####
+# 2 # Free energy of fusion paper
+#####
+Simulations of few types of fusogenic 
+
+
+
+#####
+# 3 # Nanoparticle cooperation OR Chain of nanoparticles in fusion
+#####
