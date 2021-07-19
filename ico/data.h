@@ -404,7 +404,7 @@ public:
     {
         return;
         //
-        // Construct an algorithm for positioning the second liposome in an ideal collision position.
+        // TODO: Construct an algorithm for positioning the second liposome in an ideal collision position.
         // - I think something as shown in Fit_function.blend will work fine, but feel free to innovate
         //
         // Moving the structure is already implemented in move(Atom vec) function, example below
