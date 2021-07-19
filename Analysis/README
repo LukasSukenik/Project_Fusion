@@ -7,8 +7,8 @@ Liposomes fuse via a fusion pore
 - show how decreased hydrophobic interaction and/or increased hydrophobic interaction fluctuations make it more likely for fusion pore to occur
 
 Simulations:
-Design nanoparticle by size, prolateness, strength if nanoparticle-liposome interation for best fusion properties
-- meaning are best in creating properties/structures that promote the formation of fusion pore
+Design nanoparticle by size, prolateness, strength of nanoparticle-liposome interation for best fusion properties
+- meaning the best in creating properties/structures that promote the formation of fusion pore
 
 Analysis:
 Alternative 1:
@@ -36,10 +36,38 @@ This analyses will be done using in-house "ico" software. On my TODO list.
 #####
 # 2 # Free energy of fusion paper
 #####
-Simulations of few types of fusogenic 
+Idea:
+Estimate free energy barrier from formed stalk to fused state of liposomes
 
+Simulations:
+Few types of fusogenic nanoparticles, few diameters of fusing liposomes
 
+Analysis:
+Non-equilibrium process, the time to fuse will have exponential distribution. 
+- Need at least 9 simulations for 20% error in estimation of half-life
+- analyze the time from first hydrophobic membrane core contact to fully fused state
+
+### I already have done something similar and will provide the analysis scripts
 
 #####
 # 3 # Nanoparticle cooperation OR Chain of nanoparticles in fusion
 #####
+Idea:
+Promote fusion via diaphragm rupture by enlarging stalk. Using either 3? nanoparticles or a chain with a set persistence length
+
+Simulation:
+Varied nanoparticle size, prolateness, interaction strength and persistence length
+- maybe liposome diameter
+
+Analysis same as #2#
+
+#####
+# 4 # Fusion pathway - fusion pore or diaphragm rupture
+#####
+# OR incorporate into previous papers
+#####
+Idea:
+The nanoparticle actually hinders fusion via diaphragm rupture. Fusion usually via a fusion pore pathway.
+- from simulation of paper #1# do we see diapgragm rupture?
+- Addition to paper #2#: gradually decrease liposome-nanoparticle interaction while in stalk formation.
+-- How will it affect fusion time? Estimate free energy barrier if possible
