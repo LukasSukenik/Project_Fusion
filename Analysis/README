@@ -32,7 +32,18 @@ Pros: Simpler figure
 Cons: difficult to implement
 The change and fluctuation in hydrophobic energy may be small when averaged in such a way
 
-This analyses will be done using in-house "ico" software. On my TODO list.
+### This analyses will be done using in-house "ico" software. On my TODO list.
+
+Additionally:
+Free energy estimation of a non-equilibrium process, the time to fuse will have exponential distribution. 
+- Need at least 9 simulations for 20% error in estimation of half-life
+- analyze the time from first hydrophobic membrane core contact to fully fused state
+
+### I already have done something similar and will provide the analysis scripts
+
+
+
+
 #####
 # 2 # Free energy of fusion paper
 #####
@@ -43,11 +54,10 @@ Simulations:
 Few types of fusogenic nanoparticles, few diameters of fusing liposomes
 
 Analysis:
-Non-equilibrium process, the time to fuse will have exponential distribution. 
-- Need at least 9 simulations for 20% error in estimation of half-life
-- analyze the time from first hydrophobic membrane core contact to fully fused state
+Only the Free energy estimation from #1#
 
-### I already have done something similar and will provide the analysis scripts
+
+
 
 #####
 # 3 # Nanoparticle cooperation OR Chain of nanoparticles in fusion
@@ -59,7 +69,11 @@ Simulation:
 Varied nanoparticle size, prolateness, interaction strength and persistence length
 - maybe liposome diameter
 
-Analysis same as #2#
+Analysis:
+Only the Free energy estimation from #1#
+
+
+
 
 #####
 # 4 # Fusion pathway - fusion pore or diaphragm rupture
@@ -71,3 +85,19 @@ The nanoparticle actually hinders fusion via diaphragm rupture. Fusion usually v
 - from simulation of paper #1# do we see diapgragm rupture?
 - Addition to paper #2#: gradually decrease liposome-nanoparticle interaction while in stalk formation.
 -- How will it affect fusion time? Estimate free energy barrier if possible
+
+
+
+
+################################################################################
+Analysis that would be nice to have:
+Script analyzing trajectory
+- determine if fusion occurred via fusion pore or diaphragm rupture
+
+
+
+
+
+
+
+
