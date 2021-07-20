@@ -26,7 +26,8 @@ public:
         int num_lig2 = createPatch(nano_end, data.in.c, typeTemp);
 
         // change type nano to type lig based on placement of type temp
-        gen_ligands(data, ligand, typeNano, typeLig); // find closest spheres on first fib. sphere and change their type
+        Atom patch = Atom(1,1,1,typeLig);
+        gen_ligands(data, ligand, patch, typeNano); // find closest spheres on first fib. sphere and change their type
 
         beads.erase(beads.begin()+nano_end, beads.end()); // erase second fib sphere
 

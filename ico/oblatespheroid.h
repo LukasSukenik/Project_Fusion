@@ -29,7 +29,8 @@ public:
 
         fibonacci_spheroid(beads, data.in.num_of_beads, data.in.c, typeNano, orientations);
         fibonacci_spheroid(ligand, data.in.num_lig, data.in.c, typeTemp, orientations);
-        gen_ligands( data, ligand, typeNano, typeLig, typeTemp);
+        gen_ligands( data, ligand, data.in.patch_1, typeNano, typeTemp);
+        gen_ligands( data, ligand, data.in.patch_2, typeNano, typeTemp);
 
         int i=0;
         for(auto& item : beads)
