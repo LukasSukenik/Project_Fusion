@@ -62,7 +62,6 @@ public:
 protected:    
     void gen_ligands( Data& data, vector<Atom>& ligand, int type_from, int type_to, int type_temp=-1)
     {
-        int l=0;
         for(auto& lig : ligand)
         {
             if(lig.x < data.in.janus.x && lig.y < data.in.janus.y*data.in.c && lig.z < data.in.janus.z)
