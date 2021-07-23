@@ -30,11 +30,14 @@ group 		move type 1 2 3
 group 		membrane type 1 2 3
 group		ves1 molecule 1
 group		nano1 molecule 2
-group           rigid type 4 5
-group           ligand type 5
+group           rigid type 4 5 6
+group           ligand1 type 5
+group           ligand2 type 6
 
-compute pair_lig_rec                 membrane group/group ligand
-compute pair_ves1_rec                 ves1 group/group ligand
+neigh_modify exclude group ves1 ligand2
+
+compute pair_lig_rec                 membrane group/group ligand1
+compute pair_ves1_rec                 ves1 group/group ligand1
 
 compute gyr membrane gyration
 compute gyr1 ves1 gyration

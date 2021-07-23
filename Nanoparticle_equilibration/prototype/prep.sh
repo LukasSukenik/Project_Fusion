@@ -90,5 +90,5 @@ sed -i -e 's/mass_2/'"1"'/g' data.ves_nano
 sed -i -e 's/mass_3/'"1"'/g' data.ves_nano
 sed -i -e 's/mass_4/'"1"'/g' data.ves_nano
 sed -i -e 's/mass_5/'"1"'/g' data.ves_nano
-
+sed -i -e 's/mass_6/'"1"'/g' data.ves_nano
 

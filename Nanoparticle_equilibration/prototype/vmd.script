@@ -27,6 +27,11 @@ mol selection "name 5"
 mol representation VDW 5 10.000000
 mol color ColorID 16
 mol addrep 0
+mol material Edgy
+mol selection "name 6"
+mol representation VDW 5 10.000000
+mol color ColorID 2
+mol addrep 0
 axes location off
 }
 
