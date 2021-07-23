@@ -19,8 +19,8 @@ include force_field
 #
 # Decide if bin or multi depending on performance
 #
-neighbor        1.75 bin
-neigh_modify every 1 delay 15 # must be every 1
+neighbor        1.0 bin
+neigh_modify every 1 delay 10 # must be every 1
 balance 1.1 rcb
 
 group 		move type 1 2 3
@@ -29,8 +29,12 @@ group		ves1 molecule 1
 group		ves2 molecule 3
 group		nano molecule 2
 group           nano_ves molecule 1 2
-group           rigid type 4 5
+group           rigid type 4 5 6
 group           ligand type 5
+group           ligand2 type 6
+
+neigh_modify exclude group ves1 ligand2
+neigh_modify exclude group ves2 ligand
 
 compute pair_lig_rec     membrane group/group ligand
 compute pair_ves1_rec    ves1 group/group ligand

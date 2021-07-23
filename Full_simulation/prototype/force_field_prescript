@@ -22,26 +22,34 @@ variable atr_str internal sed_interaction
 pair_coeff      1 1 lj/cut 1.0 ${head}  ${head_cut} 	# Lipid HEAD-HEAD
 pair_coeff      2 2 lj/cut 1.0 ${tail}  ${tail_cut}  	# Lipid TAIL-TAIL
 pair_coeff      3 3 lj/cut 1.0 ${head}  ${head_cut} 	# Receptor HEAD-HEAD
-pair_coeff      4 4 lj/cut 0.0 ${nano}  ${nano_cut}      # Nano
-pair_coeff      5 5 lj/cut 0.0 ${nano}  ${nano_cut}      # Ligand
+pair_coeff      4 4 lj/cut 1.0 ${nano}  ${nano_cut}      # Nano
+pair_coeff      5 5 lj/cut 1.0 ${nano}  ${nano_cut}      # Ligand
+pair_coeff      6 6 lj/cut 1.0 ${nano}  ${nano_cut}      # Ligand
 
 pair_coeff      1 2 lj/cut 1.0 ${head}  ${head_cut} 	# HEAD - TAIL, Defined by deserno
 pair_coeff      1 3 lj/cut 1.0 ${head}  ${head_cut} 	# HEAD-HEAD
 pair_coeff      1 4 lj/cut 1.0 ${head_nano}  ${head_nano_cut}
 pair_coeff      1 5 lj/cut 1.0 ${head_nano}  ${head_nano_cut}
+pair_coeff      1 6 lj/cut 1.0 ${head_nano}  ${head_nano_cut}
 
 pair_coeff      2 3 lj/cut 1.0 ${head}  ${head_cut} 	# HEAD - TAIL, Defined by deserno
 pair_coeff      2 4 lj/cut 1.0 ${nano}  ${nano_cut}
 pair_coeff      2 5 lj/cut 1.0 ${nano}  ${nano_cut}
+pair_coeff      2 6 lj/cut 1.0 ${nano}  ${nano_cut}
 
 pair_coeff      3 4 lj/cut 1.0 ${head_nano}  ${head_nano_cut}
 pair_coeff      3 5 lj/cut 1.0 ${head_nano}  ${head_nano_cut}
+pair_coeff      3 6 lj/cut 1.0 ${head_nano}  ${head_nano_cut}
 
-pair_coeff      4 5 lj/cut 0.0 ${nano}  ${nano_cut}
+pair_coeff      4 5 lj/cut 1.0 ${nano}  ${nano_cut}
+pair_coeff      4 6 lj/cut 1.0 ${nano}  ${nano_cut}
+
+pair_coeff      5 6 lj/cut 1.0 ${nano}  ${nano_cut}      # Ligand
 
 # cos^2 potential
 pair_coeff      2 2 cosatt 1.0 1.122462048309373 1.6	 # TAIL-TAIL, Defined by deserno
 pair_coeff      3 5 cosatt ${atr_str} ${head_nano_cut} 0.5
+pair_coeff      3 6 cosatt ${atr_str} ${head_nano_cut} 0.5
 
 #
 #	BOND COEFFICIENTS

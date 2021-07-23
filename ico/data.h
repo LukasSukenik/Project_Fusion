@@ -406,7 +406,6 @@ public:
      */
     void fit()
     {
-        return;
         //
         // TODO: Construct an algorithm for positioning the second liposome in an ideal collision position.
         // - I think something as shown in Fit_function.blend will work fine, but feel free to innovate
@@ -415,8 +414,9 @@ public:
         // Calculating overlap is simple as well, example below
         //
 
-        // Atom displace(0, 20, 20); // class Atom works as a vector as well.
-        // move(displace); displace liposome2 by vector displace,
+        Atom displace = Atom(0, 0, 23); // class Atom works as a vector as well.
+        move(displace); // displace liposome2 by vector displace
+        return;
 
         //for(Atom& item : temp_beads) // loop over liposome2
         //for(Atom& item : all_beads) // loop over liposome+nanoparticle structure
