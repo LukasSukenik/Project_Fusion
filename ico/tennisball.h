@@ -24,7 +24,8 @@ public:
         fibonacci_sphere_z_distrib_linear(ligand, data.in.num_lig, data.in.c, typeTemp); // second fib. sphere
         int lig_actual = spherical_wedge(data.in.num_lig, typeTemp, angle, data.in.c);
 
-        gen_ligands(data, ligand, typeNano, typeLig); // find closest spheres on first fib. sphere and change their type
+        Atom patch = Atom(1,1,1,typeLig);
+        gen_ligands(data, ligand, patch, typeNano); // find closest spheres on first fib. sphere and change their type
 
         beads.erase(beads.begin()+data.in.num_of_beads, beads.end()); // erase second fib sphere
     }
@@ -87,7 +88,8 @@ public:
         fibonacci_sphere(beads, data.in.num_of_beads, typeNano);
         fibonacci_sphere(ligand, data.in.num_lig, typeTemp); // second fib. sphere
         gen_tennisball(data.in.c, typeTemp); // turn beads on sphere to type to look like tennis ball -> half of first sphere is now type_temp
-        gen_ligands(data, ligand, typeTemp, typeLig); // last num_lig beads (second sphere) -> find closest beads on first sphere of type_temp and turn them type_lig
+        Atom patch = Atom(1,1,1,typeLig);
+        gen_ligands(data, ligand, patch, typeTemp); // last num_lig beads (second sphere) -> find closest beads on first sphere of type_temp and turn them type_lig
 
         for(int i=0; i<beads.size(); ++i){
             if(beads[i].type == typeTemp)

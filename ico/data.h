@@ -80,7 +80,8 @@ public:
     Atom boxm = Atom(-1,-1,-1);
     Atom boxp = Atom(-1,-1,-1);
     Atom com_pos = Atom(0.0, 0.0, 0.0);
-    Atom janus = Atom(1,1,1);
+    Atom patch_1 = Atom(1,1,1,0);
+    Atom patch_2 = Atom(1,1,1,0);
     string infile;
 
     vector<BeadParam> bparam;
@@ -100,7 +101,8 @@ public:
         ss << "Number of ligands: " << num_lig << endl;
         ss << "Box: (" << boxm.x << ", " << boxp.x << ", " << boxm.y << ", " << boxp.y << ", " << boxm.z << ", " << boxp.z << ")" << endl;
         ss << "Position: (" << com_pos.x << ", " << com_pos.y << ", " << com_pos.z << ")" << endl;
-        ss << "Janus: (" << janus.x << ", " << janus.y << ", " << janus.z << ")" << endl;
+        ss << "Patch_1: (" << patch_1.x << "-" << patch_1.vx << ", " << patch_1.y << "-" << patch_1.vy << ", " << patch_1.z << "-" << patch_1.vz << ", " << patch_1.type << ")" << endl;
+        ss << "Patch_1: (" << patch_2.x << ", " << patch_2.y << ", " << patch_2.z << ", " << patch_2.type << ")" << endl;
 
         ss << "Beads_lj/cut:" << endl;
         for(auto i : bparam)
@@ -146,7 +148,8 @@ public:
             if( what.compare("Fit") == 0 )  { fit=true; }
             if( what.compare("Align:") == 0 )  { ss >> mtag_1 >> mtag_2;  }
             if( what.compare("Impact_vector:") == 0 )  { ss >> ivx.x >> ivx.y >> ivx.z; }
-            if( what.compare("Janus:") == 0 )  { ss >> janus.x >> janus.y >> janus.z; }
+            if( what.compare("Patch_1:") == 0 )  { ss >> patch_1.vx >> patch_1.x >> patch_1.vy >> patch_1.y >> patch_1.vz >> patch_1.z >> patch_1.type; }
+            if( what.compare("Patch_2:") == 0 )  { ss >> patch_2.vx >> patch_2.x >> patch_2.vy >> patch_2.y >> patch_2.vz >> patch_2.z >> patch_2.type; }
             if( what.compare("Seed:") == 0 )  { ss >> seed; rng.seed(seed); }
 
             if( what.compare("Mol_tag:") == 0 ) { ss >> mol_tag; }
@@ -212,7 +215,8 @@ public:
         boxm=Atom(-1,-1,-1);
         boxp=Atom(-1,-1,-1);
         com_pos=Atom(0.0, 0.0, 0.0);
-        janus=Atom(1,1,1);
+        patch_1=Atom(1,1,1,0);
+        patch_2=Atom(1,1,1,0);
         ivx=Atom(0.0, 0.0, 0.0);
 
         infile.clear();

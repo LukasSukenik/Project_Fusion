@@ -46,6 +46,7 @@ public:
     // Lammps define Atom/Particle
     //
     myFloat x=0,y=0,z=0;
+    myFloat vx=-1.001,vy=-1.001,vz=-1.001; // velocities
     double q=0;
     int nx=0,ny=0,nz=0;
 

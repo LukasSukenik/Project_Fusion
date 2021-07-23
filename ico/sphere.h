@@ -17,7 +17,8 @@ public:
 
         fibonacci_sphere( beads, data.in.num_of_beads, typeNano);
         fibonacci_sphere_z_distrib_linear( ligand, data.in.num_lig, data.in.c, typeTemp); // second fib. sphere
-        gen_ligands( data, ligand, typeNano, typeLig); // find closest spheres on first fib. sphere and change their type
+        Atom patch = Atom(1,1,1,typeLig);
+        gen_ligands( data, ligand, patch, typeNano); // find closest spheres on first fib. sphere and change their type
 
 
         beads.erase(beads.begin()+data.in.num_of_beads, beads.end()); // erase second fib sphere
@@ -60,11 +61,13 @@ public:
     }
 
 protected:    
-    void gen_ligands( Data& data, vector<Atom>& ligand, int type_from, int type_to, int type_temp=-1)
+    void gen_ligands( Data& data, vector<Atom>& ligand, Atom patch, int type_from, int type_temp=-1)
     {
         for(auto& lig : ligand)
         {
-            if(lig.x < data.in.janus.x && lig.y < data.in.janus.y*data.in.c && lig.z < data.in.janus.z)
+            if(lig.x < patch.x && lig.x > patch.vx &&
+               lig.y < patch.y*data.in.c && lig.y > patch.vy*data.in.c &&
+               lig.z < patch.z && lig.z > patch.vz)
             {
                 Atom* select = &beads[0]; // Stupid C++, for some reason reference dont work
                 for(auto& item : beads)
@@ -75,7 +78,7 @@ protected:
                     }
                 }
                 if( select->type == type_from )
-                    select->type = type_to;
+                    select->type = patch.type;
             }
         }
     }
