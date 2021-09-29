@@ -180,7 +180,8 @@ public:
         return Atom(this->y*B.z - this->z*B.y, -this->x*B.z + this->z*B.x, this->x*B.y - this->y*B.x);
     }
 
-    bool isNeighbor(const Atom& o, myFloat len = 1.0, myFloat margin = 0.00000001) const {
+    bool isNeighbor(const Atom& o, myFloat len = 1.0, myFloat margin = 0.00000001) const
+    {
         Atom vec(o.x - x, o.y - y, o.z - z);
         double dist = vec.x*vec.x + vec.y*vec.y + vec.z*vec.z;
         return ( dist < len+margin && dist > len-margin );
