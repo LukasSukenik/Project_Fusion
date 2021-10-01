@@ -65,7 +65,7 @@ public:
     int nano_type;
     int out_type;
     int num_of_beads;
-    myFloat scale;
+    myFloat scale = 0.0;
     int offset = 1;
     int seed=0;
     myFloat c;
@@ -87,6 +87,34 @@ public:
     vector<BeadParam> bparam;
     vector<CosParam> cparam;
     vector<int> types;
+
+    bool is_mtag_12()
+    {
+        if( mtag_1 != -1 && mtag_2 != -1 )
+            return false;
+        return true;
+    }
+
+    bool is_mol_tag()
+    {
+        if(mol_tag == -1)
+            return false;
+        return true;
+    }
+
+    bool isCOM_pos()
+    {
+        if(com_pos.x == 0.0 && com_pos.y == 0.0 && com_pos.z == 0.0)
+            return false;
+        return true;
+    }
+
+    bool isScale()
+    {
+        if(scale == 0.0)
+            return false;
+        return true;
+    }
 
     string toString()
     {
@@ -455,94 +483,91 @@ public:
     void align(int mtag, int mtag2)
     {
         // Test for empty mol_tags
-        if( mtag != -1 && mtag2 != -1 )
+        Atom x_axis = Atom(1,0,0);
+        Atom x_axis_negative = Atom(-1,0,0);
+        Atom z_axis = Atom(0,0,-1);
+
+        //
+        // Move nanoparticle to center (0,0,0)
+        //
+        center(mtag);
+
+        //
+        // Rotate structure so that mtag beads (nanoparticle) align with x_axis
+        // - nanoparticle generated from poles = tips in prolate form, same as in oblate form
+        // -- 1/4 beads from each end identify the poles (tips)
+        //
+        int count = countMoltag(mtag, temp_beads);             // number of mtag (nanoparticle beads)
+        Atom nano1 = center_of_mass(mtag, 0, count/4);         // first 1/4 COM of mtag beads
+        Atom nano2 = center_of_mass(mtag, 1+3*count/4, count); // last 1/4 COM of mtag beads
+        Atom nano_axis = nano1-nano2;                          // Axis of mtag beads
+        nano_axis.normalise();                                 // normalise axis vector for correct rotation
+        //
+        // Look at vector_magic.blend for visual example, need blender 2.9
+        // - rot_axis defined plane is between the nano_axis and x_axis vector
+        // - by rotating the nano_axis vector 180deg in this plane we align in at x_axis_negative exactly
+        //
+        Atom rot_axis = nano_axis-x_axis;
+        rot_axis.normalise();                                  // normalise for rotation algo
+        for(Atom& item : temp_beads)
         {
-            Atom x_axis = Atom(1,0,0);
-            Atom x_axis_negative = Atom(-1,0,0);
-            Atom z_axis = Atom(0,0,-1);
+            item.rotate(rot_axis, 3.14159265359);       // rotate 180deg = 3.1415 radians, rad to deg = 57.2958
+        }
 
-            //
-            // Move nanoparticle to center (0,0,0)
-            //
-            center(mtag);
+        //
+        // Rotate mtag so that COM of mtag2 is (*,*,0) = centered around z axis
+        // - to keep it aligned with x axis, we rotate only around x axis
+        //
+        Atom com_mtag2 = center_of_mass(mtag2);
+        com_mtag2.x = 0.0;
+        com_mtag2.normalise();
+        double angle = acos( com_mtag2.dot(z_axis) );
+        double clockwise = (com_mtag2.cross(z_axis)).x ;
 
-            //
-            // Rotate structure so that mtag beads (nanoparticle) align with x_axis
-            // - nanoparticle generated from poles = tips in prolate form, same as in oblate form
-            // -- 1/4 beads from each end identify the poles (tips)
-            //
-            int count = countMoltag(mtag, temp_beads);             // number of mtag (nanoparticle beads)
-            Atom nano1 = center_of_mass(mtag, 0, count/4);         // first 1/4 COM of mtag beads
-            Atom nano2 = center_of_mass(mtag, 1+3*count/4, count); // last 1/4 COM of mtag beads
-            Atom nano_axis = nano1-nano2;                          // Axis of mtag beads
-            nano_axis.normalise();                                 // normalise axis vector for correct rotation
-            //
-            // Look at vector_magic.blend for visual example, need blender 2.9
-            // - rot_axis defined plane is between the nano_axis and x_axis vector
-            // - by rotating the nano_axis vector 180deg in this plane we align in at x_axis_negative exactly
-            //
-            Atom rot_axis = nano_axis-x_axis;
-            rot_axis.normalise();                                  // normalise for rotation algo
+        if(clockwise > 0.0)
+        {
             for(Atom& item : temp_beads)
             {
-                item.rotate(rot_axis, 3.14159265359);       // rotate 180deg = 3.1415 radians, rad to deg = 57.2958
+                item.rotate(x_axis, angle);       //
             }
-
-            //
-            // Rotate mtag so that COM of mtag2 is (*,*,0) = centered around z axis
-            // - to keep it aligned with x axis, we rotate only around x axis
-            //
-            Atom com_mtag2 = center_of_mass(mtag2);
-            com_mtag2.x = 0.0;
-            com_mtag2.normalise();
-            double angle = acos( com_mtag2.dot(z_axis) );
-            double clockwise = (com_mtag2.cross(z_axis)).x ;
-
-            if(clockwise > 0.0)
+        } else
+        {
+            for(Atom& item : temp_beads)
             {
-                for(Atom& item : temp_beads)
-                {
-                    item.rotate(x_axis, angle);       //
-                }
-            } else
-            {
-                for(Atom& item : temp_beads)
-                {
-                    item.rotate(x_axis_negative, angle);       //
-                }
+                item.rotate(x_axis_negative, angle);       //
             }
+        }
 
-            //
-            // TODO: Construct nanoparticle patch, rotate structure so patch points to in +y axis
-            //
-            /*Atom patch_vec;
+        //
+        // TODO: Construct nanoparticle patch, rotate structure so patch points to in +y axis
+        //
+        /*Atom patch_vec;
             Atom rotate_axis;
             double rotate_angle;*/
 
-            //
-            // Class Atom has variable x,y,z. You can access them via . (dot)
-            // example: patch_vec.y
-            //
-            // there are a number of function within class Atom that you can use. -, +, *, /, dot, cross.
-            // If you are unsure what they do look at how they are programmed in class Atom
-            //
+        //
+        // Class Atom has variable x,y,z. You can access them via . (dot)
+        // example: patch_vec.y
+        //
+        // there are a number of function within class Atom that you can use. -, +, *, /, dot, cross.
+        // If you are unsure what they do look at how they are programmed in class Atom
+        //
 
-            //
-            // function center_of_mass(mol_tag) returns position of center of mass. This is stored in class Atom
-            //
-            //Atom mtag2_COM = center_of_mass(mtag2);
+        //
+        // function center_of_mass(mol_tag) returns position of center of mass. This is stored in class Atom
+        //
+        //Atom mtag2_COM = center_of_mass(mtag2);
 
-            //
-            // Rotates structure around rotate_axis by angle rotate_angle
-            //
-            /*rotate_axis.normalise();
+        //
+        // Rotates structure around rotate_axis by angle rotate_angle
+        //
+        /*rotate_axis.normalise();
             for(Atom& item : temp_beads)
             {
                 item.rotate(rotate_axis, rotate_angle);       //
             }*/
 
-            cerr << "Aligned to x axis and z axis" << endl;
-        }
+        cerr << "Aligned to x axis and z axis" << endl;
     }
 
     void add()
@@ -581,14 +606,11 @@ public:
 
     void mol_tag(int mtag)
     {
-        if(in.mol_tag != -1)
+        for(Atom& item : temp_beads)
         {
-            for(Atom& item : temp_beads)
-            {
-                item.mol_tag = mtag;
-            }
-            cerr << "All beads changed to mol_tag = " << mtag << endl;
+            item.mol_tag = mtag;
         }
+        cerr << "All beads changed to mol_tag = " << mtag << endl;
     }
 
     void printAllSigma()

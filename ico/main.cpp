@@ -56,22 +56,21 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
         if( data.isDefined() )
         {
             data.load(data.in.infile);      // Load Data from file "data.in.infile"
-            data.rescale(data.in.scale);    // Rescale atom positions by data.in.scale - usually 1
-            data.move(data.in.com_pos);     // Move by vector defined in input file
-            data.mol_tag(data.in.mol_tag);  // Change mol_tag of all particles to one set by input
-            data.align(data.in.mtag_1, data.in.mtag_2); // align mol_tag particles in z axis and XY plane
+            if(data.in.isScale())
+                data.rescale(data.in.scale);    // Rescale atom positions by data.in.scale - usually 1
+            if(data.in.isCOM_pos())
+                data.move(data.in.com_pos);     // Move by vector defined in input file
+            if(data.in.is_mol_tag())
+                data.mol_tag(data.in.mol_tag);  // Change mol_tag of all particles to one set by input
+            if(data.in.is_mtag_12())
+                data.align(data.in.mtag_1, data.in.mtag_2); // align mol_tag particles in z axis and XY plane
 
             data.offset(data.all_beads.size());
 
             if( data.in.fit )
-            {
                 data.fit();
-            }
-
             if( data.in.center )
-            {
                 data.center();
-            }
 
             data.add();
         }
