@@ -63,7 +63,7 @@ public:
     Input() {}
 
     int nano_type;
-    int out_type;
+    int out_type=-1;
     int num_of_beads;
     myFloat scale = 0.0;
     int offset = 1;
@@ -77,12 +77,14 @@ public:
     int mtag_2=-1;
     Atom ivx = Atom(0.0, 0.0, 0.0);
     bool fit = false;
+    bool fit_lipo = false;
     Atom boxm = Atom(-1,-1,-1);
     Atom boxp = Atom(-1,-1,-1);
     Atom com_pos = Atom(0.0, 0.0, 0.0);
     Atom patch_1 = Atom(1,1,1,0);
     Atom patch_2 = Atom(1,1,1,0);
     string infile;
+    string analize_infile;
 
     vector<BeadParam> bparam;
     vector<CosParam> cparam;
@@ -172,8 +174,10 @@ public:
             if( what.compare("Box:") == 0 )             { ss >> boxm.x >> boxp.x >> boxm.y >> boxp.y >> boxm.z >> boxp.z; }
             if( what.compare("Position_shift:") == 0 )  { ss >> com_pos.x >> com_pos.y >> com_pos.z; }
             if( what.compare("Load_file:") == 0 )  { ss >> infile; }
+            if( what.compare("Analyze:") == 0 )  { ss >> analize_infile; }
             if( what.compare("Center") == 0 )  { center=true; }
             if( what.compare("Fit") == 0 )  { fit=true; }
+            if( what.compare("Fit_lipo") == 0 )  { fit_lipo=true; }
             if( what.compare("Align:") == 0 )  { ss >> mtag_1 >> mtag_2;  }
             if( what.compare("Impact_vector:") == 0 )  { ss >> ivx.x >> ivx.y >> ivx.z; }
             if( what.compare("Patch_1:") == 0 )  { ss >> patch_1.vx >> patch_1.x >> patch_1.vy >> patch_1.y >> patch_1.vz >> patch_1.z >> patch_1.type; }
@@ -237,6 +241,7 @@ public:
 
         center=false;
         fit = false;
+        fit_lipo=false;
         mtag_1=-1;
         mtag_2=-1;
 
@@ -247,6 +252,7 @@ public:
         patch_2=Atom(1,1,1,0);
         ivx=Atom(0.0, 0.0, 0.0);
 
+        analize_infile.clear();
         infile.clear();
         bparam.clear();
         cparam.clear();
@@ -344,7 +350,7 @@ public:
      * @brief center_of_mass - function computes Center-Of-Mass (COM) of particles with a givem mol_tag
      * @param mtag - mol_tag of particles for COM calculation, -1 = all particles regarles of mol_tag
      */
-    Atom center_of_mass(int mtag=-1, int start=-1, int stop=-1)
+    Atom center_of_mass_mtag(int mtag=-1, int start=-1, int stop=-1)
     {
         int count=0;
         int total=0;
@@ -364,6 +370,25 @@ public:
         return cm;
     }
 
+    Atom center_of_mass_type(int atp=-1, int start=-1, int stop=-1)
+    {
+        int count=0;
+        int total=0;
+        Atom cm;
+        for(Atom& item : temp_beads)
+        {
+            if( (item.type == atp || atp == -1) && total >= start && (total < stop || stop == -1) )
+            {
+                cm += item;
+                ++count;
+            }
+
+            if(item.type == atp || atp == -1)
+                ++total;
+        }
+        cm *= 1.0/count;
+        return cm;
+    }
     /**
      * @brief impact - Deprecated, don't use
      * @param ivx
@@ -375,7 +400,7 @@ public:
             Atom impact = Atom(0.0, 0.0, 0.0);
 
             // move the liposome to COM
-            Atom com = center_of_mass();
+            Atom com = center_of_mass_mtag();
             com *= -1;
             move(com);
 
@@ -427,6 +452,25 @@ public:
         }
     }
 
+    bool overlap()
+    {
+        double distance_squared; // we are using distance squared because it takes less resources -> we are not calculating the square root
+        double too_small = 0.5; // maybe bigger, smaller? Best to eyeball it for vmd once you make it semi-functional
+        for(Atom& lip2 : temp_beads)
+        {
+            for(Atom& nano_lip : all_beads)
+            {
+                distance_squared = lip2.distSQ(nano_lip); // assume overlap if distance squared too small
+                if(distance_squared < too_small)
+                {
+                    cerr << "Overlap!" << endl;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * @brief fit - positions the loaded/generated structure next to previosly generated/loadedd structure
      * - used for ideal collision position of two liposomes and a nanoparticle
@@ -442,37 +486,59 @@ public:
         // Calculating overlap is simple as well, example below
         //
 
-        Atom displace = Atom(0, 0, 23); // class Atom works as a vector as well.
+        Atom displace = Atom(0, 0, 25); // class Atom works as a vector as well.
         move(displace); // displace liposome2 by vector displace
-        return;
 
         //for(Atom& item : temp_beads) // loop over liposome2
         //for(Atom& item : all_beads) // loop over liposome+nanoparticle structure
-        double distance_squared; // we are using distance squared because it takes less resources -> we are not calculating the square root
-        double too_small = 1.4; // maybe bigger, smaller? Best to eyeball it for vmd once you make it semi-functional
-        for(Atom& lip2 : temp_beads)
+        while( !overlap() )
         {
-            for(Atom& nano_lip : all_beads)
-            {
-                if(nano_lip.mol_tag == 2) // 2 is nanoparticle in our use case, 1 is the liposome
-                {
-                    distance_squared = lip2.distSQ(nano_lip); // assume overlap if distance squared too small
-                    if(distance_squared < too_small)
-                    {
-                        cerr << "Overlap!" << endl;
-                    }
-                }
-            }
+            displace = Atom(0, 0, -1);
+            move(displace);
         }
+        move(displace*-1.0);
 
         //
         // Rotating a structure is shown in align function
         //
+        Atom x_axis = Atom(1,0,0);
+        double angle = -3.1415/10.0;
 
+        while( !overlap() )
+        {
+            cerr << "rotating by " << angle*3.1415 << endl;
+            for(Atom& item : temp_beads)
+            {
+                item.rotate(x_axis, angle);
+            }
+        }
+        for(Atom& item : temp_beads)
+        {
+            item.rotate(x_axis, -angle);
+        }
         //
         // Finally Calculate impact vector and print it out into a file, then load in in prep.sh script
         // tutorial for input/output in c++ https://www.cplusplus.com/doc/tutorial/files/
         //
+        /*Atom com_mtag2 = center_of_mass_mtag();
+        std::fstream fout("fit_out");
+        fout << com_mtag2.x << endl;
+        fout.close();*/
+
+    }
+
+    void fit_lipo()
+    {
+
+        Atom displace = Atom(0, 0, 25); // class Atom works as a vector as well.
+        move(displace); // displace liposome2 by vector displace
+
+        while( !overlap() )
+        {
+            displace = Atom(0, 0, -1);
+            move(displace);
+        }
+        move(displace*-1.0);
     }
 
     /**
@@ -483,91 +549,111 @@ public:
     void align(int mtag, int mtag2)
     {
         // Test for empty mol_tags
-        Atom x_axis = Atom(1,0,0);
-        Atom x_axis_negative = Atom(-1,0,0);
-        Atom z_axis = Atom(0,0,-1);
-
-        //
-        // Move nanoparticle to center (0,0,0)
-        //
-        center(mtag);
-
-        //
-        // Rotate structure so that mtag beads (nanoparticle) align with x_axis
-        // - nanoparticle generated from poles = tips in prolate form, same as in oblate form
-        // -- 1/4 beads from each end identify the poles (tips)
-        //
-        int count = countMoltag(mtag, temp_beads);             // number of mtag (nanoparticle beads)
-        Atom nano1 = center_of_mass(mtag, 0, count/4);         // first 1/4 COM of mtag beads
-        Atom nano2 = center_of_mass(mtag, 1+3*count/4, count); // last 1/4 COM of mtag beads
-        Atom nano_axis = nano1-nano2;                          // Axis of mtag beads
-        nano_axis.normalise();                                 // normalise axis vector for correct rotation
-        //
-        // Look at vector_magic.blend for visual example, need blender 2.9
-        // - rot_axis defined plane is between the nano_axis and x_axis vector
-        // - by rotating the nano_axis vector 180deg in this plane we align in at x_axis_negative exactly
-        //
-        Atom rot_axis = nano_axis-x_axis;
-        rot_axis.normalise();                                  // normalise for rotation algo
-        for(Atom& item : temp_beads)
+        if( mtag != -1 && mtag2 != -1 )
         {
-            item.rotate(rot_axis, 3.14159265359);       // rotate 180deg = 3.1415 radians, rad to deg = 57.2958
-        }
+            Atom x_axis = Atom(1,0,0);
+            Atom x_axis_negative = Atom(-1,0,0);
+            Atom z_axis = Atom(0,0,-1);
 
-        //
-        // Rotate mtag so that COM of mtag2 is (*,*,0) = centered around z axis
-        // - to keep it aligned with x axis, we rotate only around x axis
-        //
-        Atom com_mtag2 = center_of_mass(mtag2);
-        com_mtag2.x = 0.0;
-        com_mtag2.normalise();
-        double angle = acos( com_mtag2.dot(z_axis) );
-        double clockwise = (com_mtag2.cross(z_axis)).x ;
+            //
+            // Move nanoparticle to center (0,0,0)
+            //
+            center(mtag);
 
-        if(clockwise > 0.0)
-        {
+            //
+            // Rotate structure so that mtag beads (nanoparticle) align with x_axis
+            // - nanoparticle generated from poles = tips in prolate form, same as in oblate form
+            // -- 1/4 beads from each end identify the poles (tips)
+            //
+            int count = countMoltag(mtag, temp_beads);             // number of mtag (nanoparticle beads)
+            Atom nano1 = center_of_mass_mtag(mtag, 0, count/4);         // first 1/4 COM of mtag beads
+            Atom nano2 = center_of_mass_mtag(mtag, 1+3*count/4, count); // last 1/4 COM of mtag beads
+            Atom nano_axis = nano1-nano2;                          // Axis of mtag beads
+            nano_axis.normalise();                                 // normalise axis vector for correct rotation
+            //
+            // Look at vector_magic.blend for visual example, need blender 2.9
+            // - rot_axis defined plane is between the nano_axis and x_axis vector
+            // - by rotating the nano_axis vector 180deg in this plane we align in at x_axis_negative exactly
+            //
+            Atom rot_axis = nano_axis-x_axis;
+            rot_axis.normalise();                                  // normalise for rotation algo
             for(Atom& item : temp_beads)
             {
-                item.rotate(x_axis, angle);       //
+                item.rotate(rot_axis, 3.14159265359);       // rotate 180deg = 3.1415 radians, rad to deg = 57.2958
             }
-        } else
-        {
-            for(Atom& item : temp_beads)
-            {
-                item.rotate(x_axis_negative, angle);       //
-            }
-        }
 
-        //
-        // TODO: Construct nanoparticle patch, rotate structure so patch points to in +y axis
-        //
-        /*Atom patch_vec;
-            Atom rotate_axis;
+            //
+            // Rotate mtag so that COM of mtag2 is (*,*,0) = centered around z axis
+            // - to keep it aligned with x axis, we rotate only around x axis
+            //
+            Atom com_mtag2 = center_of_mass_mtag(mtag2);
+            com_mtag2.x = 0.0;
+            com_mtag2.normalise();
+            double angle = acos( com_mtag2.dot(z_axis) );
+            double clockwise = (com_mtag2.cross(z_axis)).x ;
+
+            if(clockwise > 0.0)
+            {
+                for(Atom& item : temp_beads)
+                {
+                    item.rotate(x_axis, angle);       //
+                }
+            } else
+            {
+                for(Atom& item : temp_beads)
+                {
+                    item.rotate(x_axis_negative, angle);       //
+                }
+            }
+
+            //
+            // TODO: Construct nanoparticle patch, rotate structure so patch points to in +y axis
+            //
+            Atom patch2_COM;
+            /*Atom rotate_axis;
             double rotate_angle;*/
 
-        //
-        // Class Atom has variable x,y,z. You can access them via . (dot)
-        // example: patch_vec.y
-        //
-        // there are a number of function within class Atom that you can use. -, +, *, /, dot, cross.
-        // If you are unsure what they do look at how they are programmed in class Atom
-        //
+            //
+            // Class Atom has variable x,y,z. You can access them via . (dot)
+            // example: patch_vec.y
+            //
+            // there are a number of function within class Atom that you can use. -, +, *, /, dot, cross.
+            // If you are unsure what they do look at how they are programmed in class Atom
+            //
 
-        //
-        // function center_of_mass(mol_tag) returns position of center of mass. This is stored in class Atom
-        //
-        //Atom mtag2_COM = center_of_mass(mtag2);
+            //
+            // function center_of_mass(mol_tag) returns position of center of mass. This is stored in class Atom
+            //
 
-        //
-        // Rotates structure around rotate_axis by angle rotate_angle
-        //
-        /*rotate_axis.normalise();
-            for(Atom& item : temp_beads)
+            for(Atom& item : temp_beads )
             {
-                item.rotate(rotate_axis, rotate_angle);       //
-            }*/
+                if(item.type == 6)
+                {
+                    patch2_COM = center_of_mass_type(item.type); //Calculate COM of the particles of temp_beads that have atom type 5 i.e. atoms of the patch2
+                }
 
-        cerr << "Aligned to x axis and z axis" << endl;
+            }
+
+            Atom mtag2_COM = center_of_mass_mtag(mtag);
+
+            cerr << patch2_COM << endl;
+            cerr << mtag2_COM << endl;
+
+            //
+            // Rotates structure around rotate_axis by angle rotate_angle
+            //
+            //rotate_axis.normalise();
+            if(patch2_COM.y < 0)        //if patch is located at -y, rotate.
+            {
+                for(Atom& item : temp_beads)
+                {
+                    item.rotate(z_axis, 3.14159265359);       //rotate nano+lip1 180deg in z axis. Locates patch2 to +y
+
+                }
+                cerr << "Patch 2 at +y" << endl;
+            }
+            cerr << "Aligned to x axis and z axis" << endl;
+        }
     }
 
     void add()
@@ -631,7 +717,7 @@ public:
     {
         if(! temp_beads.empty())
         {
-            Atom cm = center_of_mass(mtag);
+            Atom cm = center_of_mass_mtag(mtag);
             cm*=-1.0;
             move( cm );
             cerr << "center of " << mtag << " done" << endl;
