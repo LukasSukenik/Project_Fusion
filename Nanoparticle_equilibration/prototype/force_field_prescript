@@ -1,4 +1,4 @@
-variable head internal 0.95
+variable head internal sed_head_size
 variable head_cut equal ${head}*1.12246204831
 
 variable tail internal 1.0
@@ -11,7 +11,7 @@ variable head_nano equal (${head}+${nano})/2.0
 variable head_nano_cut equal ${head_nano}*1.12246204831
 
 variable atr_str internal sed_interaction
-
+#variable atr_str2 internal 4
 #
 #	PAIR COEFFICIENTS
 #

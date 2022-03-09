@@ -63,9 +63,11 @@ function gen_ves
 function gen_ff
 {
   interaction=$3
+  head=$4
 
   cp $1 $2
   sed -i -e 's/sed_interaction/'"$interaction"'/g' $2
+  sed -i -e 's/sed_head_size/'"$head"'/g' $2
 }
 
 # constants
@@ -78,12 +80,13 @@ strength=$2
 c_param=$3
 scale=$4
 box=$5
+h_size=$6
 
 gen_ves load_ves_prescript load_ves $box
 gen_nano "nanoparticle_prescript" "nanoparticle" $scale $c_param $num_lig_area $num_nano_area $box
 ./ico load_ves nanoparticle > data.ves_nano
 gen_in "in.prescript_production" "in.production" $run_steps $box
-gen_ff "force_field_prescript" "force_field" $strength
+gen_ff "force_field_prescript" "force_field" $strength $h_size
 
 sed -i -e 's/mass_1/'"1"'/g' data.ves_nano
 sed -i -e 's/mass_2/'"1"'/g' data.ves_nano

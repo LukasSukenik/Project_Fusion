@@ -11,5 +11,6 @@ Center
 Seed: 1
 Atom_type: 4
 Mol_tag: 2
-Patch_1: -1 0 -1 1 -1 0.5 5
-Patch_2:  0 1 -1 1 -1 0.5 6
+Patch_1: -1 1 -1 -0.5 -1 1 5
+Patch_2: -1 1 -0.5 1 -1 0.5 6
+
