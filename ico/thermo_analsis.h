@@ -34,24 +34,25 @@ double r=5e-9; // m
 
         double temp, pe, ke, gyr, cm_x, cm_y, cm_z;
         int step;
+        int jump_limit = 150;
 
         // Einstein-Stokes
-        double D=kb*T/(6*pi*vis*r); // m^2 . s
+        //double D=kb*T/(6*pi*vis*r); // m^2 . s
 
-        Welford_Algo aver[4];
+        Welford_Algo aver[jump_limit];
         Atom origin(0,0,0);
         Atom current;
 
         double dist_sq;
         vector<int> steps;
         vector<double> cx, cy, cz;
-        int jump=5000;
+        int persistence_length=5000; // sim setup is thermo every 5000
 
         while( !fs.eof() ) // Lines in input, For (steps), eof = end of file
         {
             // step temp pe ke c_gyr1 c_cm1[1] c_cm1[2] c_cm1[3]
             fs >> step >> temp >> pe >> ke >> gyr >> cm_x >> cm_y >> cm_z;
-            if( (step % jump ) == 0 )
+            if( (step % persistence_length ) == 0 )
             {
                 steps.push_back(step);
                 cx.push_back(cm_x);
@@ -61,75 +62,28 @@ double r=5e-9; // m
         }
         fs.close();
 
-
-        for(int jj = 1; jj <= step; ++jj) // For ( Jump )
+        for(int jj = 1; jj < jump_limit; ++jj) // For ( Jump length in persistence length )
         {
             origin = Atom(0,0,0);
             for (int i=0; i<steps.size(); ++i) // For ( Steps )
             {
-                if( (steps[i] % ( jump*(jj) ) ) == 0)
+                if( (steps[i] % ( persistence_length*(jj) ) ) == 0)
                 {
                     current.x = cx[i];
                     current.y = cy[i];
                     current.z = cz[i];
 
                     dist_sq = origin.distSQ(current);
+                    //cout << dist_sq<<endl;
                     aver[jj].push(dist_sq);
 
                     origin = current;
-
                 }
             }
-            cout << aver[jj].getAverage() << endl;
+            cout << jj << " " << aver[jj].getNum() << " "<< aver[jj].getAverage() << endl;
         }
-
-
         return 0;
     }
 };
 
 #endif // THERMO_ANALSIS_H
-
-
-/*
- * BEGIN{
-        # constants
-        kb=1.38e-23 # m^2 . kg / (s^2 K)
-        T=310 # K
-        pi=3.141592
-        vis=0.00089 # J.s/m^3
-        r=5e-9 # m
-
-        # simulation settings
-        every=5000
-
-        # Einstein-Stokes
-        D=kb*T/(6*pi*vis*r) # m^2 . s
-
-        cumdis=0
-        x=-1
-        y=-1
-        z=-1
-        bool_beg_set=0 # 0=false, 1=true
-}
-{
-
-        #expected=6*45*0.01*$1
-
-        if($1==0 && bool_beg_set == 0)
-        {
-          x=$6
-          y=$7
-          z=$8
-        }
-
-        if( ($1 % (10*every)) == 0 )
-       {
-          cumdis=(($6-x)**2+($7-y)**2+($8-z)**2) # cumulative distance from beginning
-          #expected=6*D*$1
-
-          print $1, cumdis
-        }
-}
-
- * */
