@@ -3,4 +3,4 @@ Lammps_offset: 0
 Box: -sed_box sed_box -sed_box sed_box -sed_box sed_box
 Load_file: data.nano_equi
 Output_type: 1
-Align: 2 1
+Align_z: 2 1

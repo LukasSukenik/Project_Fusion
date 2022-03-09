@@ -57,8 +57,6 @@ fix 5 all balance 1000 1.1 rcb
 #
 # move ves2 down. nano+ves1 up
 #
-velocity ves2 set 0 sed_ivy sed_nivz
-velocity nano_ves set 0 sed_nivy sed_ivz
 fix rigid_integrator rigid rigid/nve molecule langevin 1.0 1.0 r_damp r_random 
 timestep        0.01
 run             4000

@@ -4,4 +4,4 @@ Box: -sed_box sed_box -sed_box sed_box -sed_box sed_box
 Mol_tag: 3
 Load_file: data.equi
 Output_type: 1
-Fit
+Fit: 0 -1 0

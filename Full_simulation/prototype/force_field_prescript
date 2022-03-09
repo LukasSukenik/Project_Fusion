@@ -1,4 +1,4 @@
-variable head internal 0.95
+variable head internal sed_head_size
 variable head_cut equal ${head}*1.12246204831
 
 variable tail internal 1.0
@@ -11,6 +11,7 @@ variable head_nano equal (${head}+${nano})/2.0
 variable head_nano_cut equal ${head_nano}*1.12246204831
 
 variable atr_str internal sed_interaction
+#variable atr_str2 internal 4
 
 #
 #	PAIR COEFFICIENTS
@@ -47,7 +48,7 @@ pair_coeff      4 6 lj/cut 1.0 ${nano}  ${nano_cut}
 pair_coeff      5 6 lj/cut 1.0 ${nano}  ${nano_cut}      # Ligand
 
 # cos^2 potential
-pair_coeff      2 2 cosatt 1.0 1.122462048309373 1.6	 # TAIL-TAIL, Defined by deserno
+pair_coeff      2 2 cosatt 1.0 ${tail_cut} 1.6	 # TAIL-TAIL, Defined by deserno
 pair_coeff      3 5 cosatt ${atr_str} ${head_nano_cut} 0.5
 pair_coeff      3 6 cosatt ${atr_str} ${head_nano_cut} 0.5
 
