@@ -73,8 +73,14 @@ public:
     int mol_tag=-1;
     int atom_type=1;
     bool center=false;
+    bool timestep=false;
     int mtag_1=-1;
     int mtag_2=-1;
+    int mtag_1z=-1;
+    int mtag_2z=-1;
+    int fit_x=-99;
+    int fit_y=-99;
+    int fit_z=-99;
     Atom ivx = Atom(0.0, 0.0, 0.0);
     bool fit = false;
     bool fit_lipo = false;
@@ -85,6 +91,8 @@ public:
     Atom patch_2 = Atom(1,1,1,0);
     string infile;
     string analize_infile;
+    bool histo=false;
+    bool dist=false;
 
     vector<BeadParam> bparam;
     vector<CosParam> cparam;
@@ -92,10 +100,28 @@ public:
 
     bool is_mtag_12()
     {
+        if( mtag_1 == -1 || mtag_2 == -1 )
+            return false;
+        return true;
+        /*
         if( mtag_1 != -1 && mtag_2 != -1 )
+            return true;
+        return false;
+        */
+    }
+    bool is_mtag_12z()
+    {
+        if( mtag_1z == -1 || mtag_2z == -1 )
             return false;
         return true;
     }
+    bool is_fit()
+    {
+        if( fit_x == -99 || fit_y == -99 || fit_z== -99)
+            return false;
+        return true;
+    }
+
 
     bool is_mol_tag()
     {
@@ -131,6 +157,7 @@ public:
         ss << "Number of ligands: " << num_lig << endl;
         ss << "Box: (" << boxm.x << ", " << boxp.x << ", " << boxm.y << ", " << boxp.y << ", " << boxm.z << ", " << boxp.z << ")" << endl;
         ss << "Position: (" << com_pos.x << ", " << com_pos.y << ", " << com_pos.z << ")" << endl;
+        ss << "Align: " << mtag_1 << " " << mtag_2 << endl;
         ss << "Patch_1: (" << patch_1.x << "-" << patch_1.vx << ", " << patch_1.y << "-" << patch_1.vy << ", " << patch_1.z << "-" << patch_1.vz << ", " << patch_1.type << ")" << endl;
         ss << "Patch_1: (" << patch_2.x << ", " << patch_2.y << ", " << patch_2.z << ", " << patch_2.type << ")" << endl;
 
@@ -175,10 +202,14 @@ public:
             if( what.compare("Position_shift:") == 0 )  { ss >> com_pos.x >> com_pos.y >> com_pos.z; }
             if( what.compare("Load_file:") == 0 )  { ss >> infile; }
             if( what.compare("Analyze:") == 0 )  { ss >> analize_infile; }
+            if( what.compare("Histogram") == 0 )  { histo=true; }
+            if( what.compare("Ves_distances") == 0 )  { dist=true; }
             if( what.compare("Center") == 0 )  { center=true; }
-            if( what.compare("Fit") == 0 )  { fit=true; }
+            if( what.compare("Timestep") == 0 )  { timestep=true; }
+            if( what.compare("Fit:") == 0 )  { ss >> fit_x >> fit_y >> fit_z; }
             if( what.compare("Fit_lipo") == 0 )  { fit_lipo=true; }
             if( what.compare("Align:") == 0 )  { ss >> mtag_1 >> mtag_2;  }
+            if( what.compare("Align_z:") == 0 )  { ss >> mtag_1z >> mtag_2z;  }
             if( what.compare("Impact_vector:") == 0 )  { ss >> ivx.x >> ivx.y >> ivx.z; }
             if( what.compare("Patch_1:") == 0 )  { ss >> patch_1.vx >> patch_1.x >> patch_1.vy >> patch_1.y >> patch_1.vz >> patch_1.z >> patch_1.type; }
             if( what.compare("Patch_2:") == 0 )  { ss >> patch_2.vx >> patch_2.x >> patch_2.vy >> patch_2.y >> patch_2.vz >> patch_2.z >> patch_2.type; }
@@ -240,10 +271,18 @@ public:
         atom_type=1;
 
         center=false;
+        timestep=false;
         fit = false;
         fit_lipo=false;
+        histo=false;
+        dist=false;
         mtag_1=-1;
         mtag_2=-1;
+        mtag_1z=-1;
+        mtag_2z=-1;
+        fit_x=-99;
+        fit_y=-99;
+        fit_z=-99;
 
         boxm=Atom(-1,-1,-1);
         boxp=Atom(-1,-1,-1);
@@ -476,54 +515,58 @@ public:
      * - used for ideal collision position of two liposomes and a nanoparticle
      * see Fit_function.blend, need blender 2.9
      */
-    void fit()
+    void fit(int fx, int fy, int fz)
     {
-        //
-        // TODO: Construct an algorithm for positioning the second liposome in an ideal collision position.
-        // - I think something as shown in Fit_function.blend will work fine, but feel free to innovate
-        //
-        // Moving the structure is already implemented in move(Atom vec) function, example below
-        // Calculating overlap is simple as well, example below
-        //
-
-        Atom displace = Atom(0, 0, 25); // class Atom works as a vector as well.
-        move(displace); // displace liposome2 by vector displace
-
-        //for(Atom& item : temp_beads) // loop over liposome2
-        //for(Atom& item : all_beads) // loop over liposome+nanoparticle structure
-        while( !overlap() )
+        if( fx != -99 && fy != -99 && fz!= -99 )
         {
-            displace = Atom(0, 0, -1);
-            move(displace);
-        }
-        move(displace*-1.0);
+            //
+            // TODO: Construct an algorithm for positioning the second liposome in an ideal collision position.
+            // - I think something as shown in Fit_function.blend will work fine, but feel free to innovate
+            //
+            // Moving the structure is already implemented in move(Atom vec) function, example below
+            // Calculating overlap is simple as well, example below
+            //
 
-        //
-        // Rotating a structure is shown in align function
-        //
-        Atom x_axis = Atom(1,0,0);
-        double angle = -3.1415/10.0;
+            Atom displace = Atom(0, 0, 25); // class Atom works as a vector as well.
+            move(displace); // displace liposome2 by vector displace
 
-        while( !overlap() )
-        {
-            cerr << "rotating by " << angle*3.1415 << endl;
+            //for(Atom& item : temp_beads) // loop over liposome2
+            //for(Atom& item : all_beads) // loop over liposome+nanoparticle structure
+            while( !overlap() )
+            {
+                displace = Atom(0, 0, -1);
+                move(displace);
+            }
+            move(displace*-1.0);
+
+            //
+            // Rotating a structure is shown in align function
+            //
+            Atom axis = Atom(fx,fy,fz);
+            double angle = -3.1415/10.0;
+
+            while( !overlap() )
+            {
+                cerr << "rotating by " << angle*3.1415 << endl;
+                for(Atom& item : temp_beads)
+                {
+                    item.rotate(axis, angle);
+                }
+            }
             for(Atom& item : temp_beads)
             {
-                item.rotate(x_axis, angle);
+                item.rotate(axis, -angle);
             }
-        }
-        for(Atom& item : temp_beads)
-        {
-            item.rotate(x_axis, -angle);
-        }
-        //
-        // Finally Calculate impact vector and print it out into a file, then load in in prep.sh script
-        // tutorial for input/output in c++ https://www.cplusplus.com/doc/tutorial/files/
-        //
-        /*Atom com_mtag2 = center_of_mass_mtag();
+            //
+            // Finally Calculate impact vector and print it out into a file, then load in in prep.sh script
+            // tutorial for input/output in c++ https://www.cplusplus.com/doc/tutorial/files/
+            //
+            /*Atom com_mtag2 = center_of_mass_mtag();
         std::fstream fout("fit_out");
         fout << com_mtag2.x << endl;
         fout.close();*/
+
+        }
 
     }
 
@@ -656,6 +699,90 @@ public:
         }
     }
 
+    void align_z(int mtag, int mtag2)
+    {
+        // Test for empty mol_tags
+        if( mtag != -1 && mtag2 != -1 )
+        {
+            Atom x_axis = Atom(1,0,0);
+            Atom z_axis_negative = Atom(0,0,-1);
+            Atom z_axis = Atom(0,0,1);
+
+            //
+            // Move nanoparticle to center (0,0,0)
+            //
+            center(mtag);
+            //
+            int count = countMoltag(mtag, temp_beads);             // number of mtag (nanoparticle beads)
+            Atom nano1 = center_of_mass_mtag(mtag, 0, count/4);         // first 1/4 COM of mtag beads
+            Atom nano2 = center_of_mass_mtag(mtag, 1+3*count/4, count); // last 1/4 COM of mtag beads
+            Atom nano_axis = nano1-nano2;                          // Axis of mtag beads
+            nano_axis.normalise();                                 // normalise axis vector for correct rotation
+            //
+            //
+            Atom rot_axis = nano_axis-z_axis;
+            rot_axis.normalise();                                  // normalise for rotation algo
+            for(Atom& item : temp_beads)
+            {
+                item.rotate(rot_axis, 3.14159265359);       // rotate 180deg = 3.1415 radians, rad to deg = 57.2958
+            }
+            //
+            Atom com_mtag2 = center_of_mass_mtag(mtag2);
+            com_mtag2.z = 0.0;
+            com_mtag2.normalise();
+            double angle = acos( com_mtag2.dot(x_axis) );
+            double clockwise = (com_mtag2.cross(x_axis)).z ;
+
+            if(clockwise > 0.0)
+            {
+                for(Atom& item : temp_beads)
+                {
+                    item.rotate(z_axis, angle);       //
+                }
+            } else
+            {
+                for(Atom& item : temp_beads)
+                {
+                    item.rotate(z_axis_negative, angle);       //
+                }
+            }
+
+           //
+            // TODO: Construct nanoparticle patch, rotate structure so patch points to in +y axis
+            //
+            Atom patch2_COM;
+
+
+            for(Atom& item : temp_beads )
+            {
+                if(item.type == 6)
+                {
+                    patch2_COM = center_of_mass_type(item.type); //Calculate COM of the particles of temp_beads that have atom type 5 i.e. atoms of the patch2
+                }
+
+            }
+
+            Atom mtag2_COM = center_of_mass_mtag(mtag);
+
+            cerr << patch2_COM << endl;
+            cerr << mtag2_COM << endl;
+
+            //
+            // Rotates structure around rotate_axis by angle rotate_angle
+            //
+            //rotate_axis.normalise();
+            if(patch2_COM.y < 0)        //if patch is located at -y, rotate.
+            {
+                for(Atom& item : temp_beads)
+                {
+                    item.rotate(z_axis, 3.14159265359);       //rotate nano+lip1 180deg in z axis. Locates patch2 to +y
+
+                }
+                cerr << "Patch 2 at +y" << endl;
+            }
+            cerr << "Aligned to x axis and z axis" << endl;
+        }
+    }
     void add()
     {
         all_beads.insert(all_beads.end(), temp_beads.begin(), temp_beads.end());
