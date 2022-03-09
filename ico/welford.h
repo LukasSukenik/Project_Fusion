@@ -21,7 +21,7 @@ public:
 
     void push(double in)
     {
-        if(num == 0)
+        if(num == 0.0)
         {
             init(in);
         }
@@ -36,15 +36,21 @@ public:
 
         }
     }
-
     double getAverage()
     {
+        if(num == 0.0)
+            return 0.0;
         return sum / num;
     }
 
     double getVariance()
     {
         return sum_diff_cur/num;
+    }
+
+    int getNum()
+    {
+        return num;
     }
 };
 
