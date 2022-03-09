@@ -8,6 +8,8 @@
 #include "dodecahedron.h"
 #include "chain.h"
 #include "slab.h"
+#include "xtcanalysis.h"
+#include "thermo_analsis.h"
 
 #include <iostream>
 #include <fstream>
@@ -28,6 +30,10 @@ void helpMessage();
 
 int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(same as Y) $beg $end, $position in Z, $offset
 {
+    Thermo_analysis t;
+    /*t.timestep_analyze();
+    return 0;*/
+
     if( argc == 1 || strcmp(argv[1], "-h") == 0 ) {
         cout << "No input file specified" << endl;
         helpMessage();
@@ -49,6 +55,8 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
     nano.push_back( new SphereJanus());                                             // 11
     nano.push_back( new Cow());                                                     // 12
 
+    XTCAnalysis xtc_analyzator;
+
     for(int i=1; i<argc; ++i)
     {
         data.loadInput(argv[i]);
@@ -66,13 +74,22 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
                 data.mol_tag(data.in.mol_tag);  // Change mol_tag of all particles to one set by input
             if(data.in.is_mtag_12())
                 data.align(data.in.mtag_1, data.in.mtag_2); // align mol_tag particles in z axis and XY plane
+            if(data.in.is_mtag_12z())
+                data.align_z(data.in.mtag_1z, data.in.mtag_2z); // align mol_tag particles in z axis and XY plane
 
             data.offset(data.all_beads.size());
 
-            if( data.in.fit )
-                data.fit();
+            if( data.in.is_fit() )
+                data.fit(data.in.fit_x, data.in.fit_y,data.in.fit_z);
+            if( data.in.fit_lipo )
+                data.fit_lipo();
             if( data.in.center )
                 data.center();
+
+            if( !data.in.analize_infile.empty() )
+                xtc_analyzator.analyze_histogram( data.in.analize_infile, data );
+            if( data.in.timestep )
+                t.timestep_analyze();
 
             data.add();
         }
@@ -98,10 +115,25 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
 
     if( data.in.out_type == 1)
     {
+        double COM=0.0; double min=9999; double max=-9999;
+        for(Atom& item : data.all_beads)
+        {
+            if(item.z > max)
+                max = item.z;
+            if(item.z < min)
+                min = item.z;
+            COM += item.z;
+        }
+
+        ofstream myfile;
+        myfile.open ("wall_properties");
+        myfile << COM/data.all_beads.size() << " " << min << " " << max << endl;
+        myfile.close();
+
         data.printLammps();
         cerr << "Lammps out" << endl;
     }
-    else
+    if( data.in.out_type == 2)
     {
         data.printXYZ();
         cerr << "XYZ out" << endl;
@@ -110,7 +142,7 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
     for(int i=0; i<nano.size(); ++i)
         delete nano[i];
 
-    cerr << data.toString() << endl;
+    //cerr << data.toString() << endl;
 
     return 0;
 }
