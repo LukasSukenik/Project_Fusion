@@ -4,7 +4,6 @@
 #include "rng.h"
 
 
-
 double ran() {
     return unif(rng);
 }
