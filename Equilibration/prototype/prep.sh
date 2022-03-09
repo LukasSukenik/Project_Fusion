@@ -31,6 +31,16 @@ function gen_ves
   sed -i -e 's/sed_box/'"$box"'/g' $2
 }
 
+function gen_ff
+{
+  head_size=$3
+
+  cp $1 $2
+  sed -i -e 's/sed_head_size/'"$head_size"'/g' $2
+}
+
+
 gen_in "in.prescript_equi" "in.equi" $1 $5
 gen_ves prescript_vesicle vesicle $2 $3 $4 $5
+gen_ff "force_field_equi_prescript" "force_field_equi" $6
 ./gen_membrane vesicle

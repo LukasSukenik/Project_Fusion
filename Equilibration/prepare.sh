@@ -10,7 +10,7 @@ for rad in $radius_list
 do 
   for lcount in $lipid_count_list
   do
-    folder="r${rad}_l${lcount}"
+    folder="r${rad}_h$5_l${lcount}"
     echo $folder
 
     rcount=$(($lcount / 2))
@@ -20,7 +20,7 @@ do
     cp prototype/* $folder/
 
     cd $folder
-      ./prep.sh $1 $lcount $rcount $rad $4
+      ./prep.sh $1 $lcount $rcount $rad $4 $5
     cd ..
   done  
 done
@@ -30,7 +30,7 @@ r_run=100000 #steps should work fine
 lipid_count=1000
 radius=10
 box=30
+head=0.95
 
-create $r_run "$lipid_count" "$radius" $box
-
+create $r_run "$lipid_count" "$radius" $box $head
 
