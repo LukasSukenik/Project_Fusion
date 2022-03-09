@@ -48,5 +48,6 @@ HEADERS += \
     surface.h \
     tennisball.h \
     xtcanalysis.h \
-    welford.h
+    welford.h \
+    thermo_analsis.h
 
