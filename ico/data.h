@@ -87,6 +87,7 @@ public:
     Atom boxm = Atom(-1,-1,-1);
     Atom boxp = Atom(-1,-1,-1);
     Atom com_pos = Atom(0.0, 0.0, 0.0);
+    Atom rotation = Atom(0.0, 0.0, 0.0);
     Atom patch_1 = Atom(1,1,1,0);
     Atom patch_2 = Atom(1,1,1,0);
     string infile;
@@ -137,6 +138,13 @@ public:
         return true;
     }
 
+    bool isRotation()
+    {
+        if(rotation.x == 0.0 && rotation.y == 0.0 && rotation.z == 0.0)
+            return false;
+        return true;
+    }
+
     bool isScale()
     {
         if(scale == 0.0)
@@ -157,6 +165,7 @@ public:
         ss << "Number of ligands: " << num_lig << endl;
         ss << "Box: (" << boxm.x << ", " << boxp.x << ", " << boxm.y << ", " << boxp.y << ", " << boxm.z << ", " << boxp.z << ")" << endl;
         ss << "Position: (" << com_pos.x << ", " << com_pos.y << ", " << com_pos.z << ")" << endl;
+        ss << "Rotation: (" << rotation.x << ", " << rotation.y << ", " << rotation.z << ")" << endl;
         ss << "Align: " << mtag_1 << " " << mtag_2 << endl;
         ss << "Patch_1: (" << patch_1.x << "-" << patch_1.vx << ", " << patch_1.y << "-" << patch_1.vy << ", " << patch_1.z << "-" << patch_1.vz << ", " << patch_1.type << ")" << endl;
         ss << "Patch_1: (" << patch_2.x << ", " << patch_2.y << ", " << patch_2.z << ", " << patch_2.type << ")" << endl;
@@ -200,6 +209,7 @@ public:
             if( what.compare("Number_of_ligands:") == 0 ) { ss >> num_lig; }
             if( what.compare("Box:") == 0 )             { ss >> boxm.x >> boxp.x >> boxm.y >> boxp.y >> boxm.z >> boxp.z; }
             if( what.compare("Position_shift:") == 0 )  { ss >> com_pos.x >> com_pos.y >> com_pos.z; }
+            if( what.compare("Rotation:") == 0 )  { ss >> rotation.x >> rotation.y >> rotation.z; }
             if( what.compare("Load_file:") == 0 )  { ss >> infile; }
             if( what.compare("Analyze:") == 0 )  { ss >> analize_infile; }
             if( what.compare("Histogram") == 0 )  { histo=true; }
@@ -287,6 +297,7 @@ public:
         boxm=Atom(-1,-1,-1);
         boxp=Atom(-1,-1,-1);
         com_pos=Atom(0.0, 0.0, 0.0);
+        rotation=Atom(0.0, 0.0, 0.0);
         patch_1=Atom(1,1,1,0);
         patch_2=Atom(1,1,1,0);
         ivx=Atom(0.0, 0.0, 0.0);
@@ -584,6 +595,14 @@ public:
         move(displace*-1.0);
     }
 
+    Atom get_Mtag_axis(int mtag)
+    {
+        int count = countMoltag(mtag, temp_beads);  // number of mtag (nanoparticle beads)
+        Atom nano1 = center_of_mass_mtag(mtag, 0, count/4);         // first 1/4 COM of mtag beads
+        Atom nano2 = center_of_mass_mtag(mtag, 1+3*count/4, count); // last 1/4 COM of mtag beads
+        return nano1-nano2;                          // Axis of mtag beads
+    }
+
     /**
      * @brief align - align a liposome and nanoparticle
      * @param mtag - nanoparticle mol_tag
@@ -608,10 +627,8 @@ public:
             // - nanoparticle generated from poles = tips in prolate form, same as in oblate form
             // -- 1/4 beads from each end identify the poles (tips)
             //
-            int count = countMoltag(mtag, temp_beads);             // number of mtag (nanoparticle beads)
-            Atom nano1 = center_of_mass_mtag(mtag, 0, count/4);         // first 1/4 COM of mtag beads
-            Atom nano2 = center_of_mass_mtag(mtag, 1+3*count/4, count); // last 1/4 COM of mtag beads
-            Atom nano_axis = nano1-nano2;                          // Axis of mtag beads
+
+            Atom nano_axis = get_Mtag_axis(mtag);
             nano_axis.normalise();                                 // normalise axis vector for correct rotation
             //
             // Look at vector_magic.blend for visual example, need blender 2.9

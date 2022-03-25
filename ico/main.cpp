@@ -103,7 +103,9 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
             cerr << "Generating: " << nano[data.in.nano_type-1]->name << endl;
             nano[data.in.nano_type-1]->generate( data );
             nano[data.in.nano_type-1]->rescale( data.in.scale );
+            nano[data.in.nano_type-1]->rotate( data.in.rotation, data );
             nano[data.in.nano_type-1]->move( data.in.com_pos );
+
             nano[data.in.nano_type-1]->add(data);
         }
     }

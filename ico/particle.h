@@ -129,6 +129,50 @@ public:
             item += move;
     }
 
+    Atom center_of_mass_mtag_part(int mtag=-1, int start=-1, int stop=-1)
+    {
+        int count=0;
+        int total=0;
+        Atom cm;
+        for(Atom& item : beads)
+        {
+            if( (item.mol_tag == mtag || mtag == -1) && total >= start && (total < stop || stop == -1) )
+            {
+                cm += item;
+                ++count;
+            }
+
+            if(item.mol_tag == mtag || mtag == -1)
+                ++total;
+        }
+        cm *= 1.0/count;
+        return cm;
+    }
+
+    void rotate(Atom direction, Data& data)
+    {
+        if( data.in.isRotation() )
+        {
+            // Construct molecule direction vector
+            int mtag=beads[0].mol_tag;
+            int count = data.countMoltag(mtag, beads);  // number of mtag (nanoparticle beads)
+            Atom nano1 = center_of_mass_mtag_part(mtag, 0, count/4);         // first 1/4 COM of mtag beads
+            Atom nano2 = center_of_mass_mtag_part(mtag, 1+3*count/4, count); // last 1/4 COM of mtag beads
+            Atom mtag_dir= nano1-nano2;
+            //Atom mtag_dir = data.get_Mtag_axis(beads[0].mol_tag);
+            mtag_dir.normalise();
+            direction.normalise();
+
+            Atom axis = direction.cross(mtag_dir);
+            myFloat angle = asin(axis.size());
+            axis.normalise();
+
+            for(Atom& item : this->beads){
+                item.rotate(axis, angle);
+             }
+        }
+    }
+
     void rescale(double rescale)
     {
         for(Atom& item : this->beads)
