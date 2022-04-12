@@ -111,7 +111,9 @@ int symmetry( Atom test, Atom cm, rvec* frame, Data& data);
 Atom get_axis(Data& data, rvec* frame, double cutoff)
 {
     int temp=10000;
-    Atom id, cm, test;
+    int diff=-1;
+    Atom id, test;
+    Atom cm=com(frame, data, vector<int>{1,3});
 
     for(int i=0; i<data.temp_beads.size(); ++i) // loop over particles to construct axis through
     {
@@ -120,9 +122,11 @@ Atom get_axis(Data& data, rvec* frame, double cutoff)
         test.z = frame[i][2];
         test.mol_tag = data.temp_beads[i].mol_tag;
 
-        if(data.temp_beads[i].mol_tag != MOLTAG_NANO && (test-cm).size() > cutoff) // look at vesicle caps only
+        if(test.mol_tag != MOLTAG_NANO && (test-cm).size()  > cutoff) // look at vesicle caps only
         {
-            int diff = symmetry(test, cm, frame, data);
+            diff = symmetry(test, cm, frame, data);
+            //cout<<diff<<endl;
+
             if(diff<temp)
             {
                 temp=diff;
@@ -130,7 +134,7 @@ Atom get_axis(Data& data, rvec* frame, double cutoff)
             }
         }
     }
-    return id;
+      return id;
 }
 
 
@@ -149,69 +153,77 @@ int symmetry( Atom test, Atom cm, rvec* frame, Data& data)
     Atom x2=axis;
 
     x2.rotate(rot_axis, angle);
-    cm.rotate(rot_axis, angle);
+    //cm.rotate(rot_axis, angle);
 
-    int posx=0;
-    int negx=0;
-    int posy=0;
-    int negy=0;
-    int diff1=0;
-    int diff2=0;
-    int diff3 = 0;
-    int poso=0;
-    int nego=0;
+    int  posx1=0, posx3=0;
+    int  negx1=0, negx3=0;
+    int  posy1=0, posy3=0;
+    int  negy1=0, negy3=0;
+    int df1=0, df3=0, df5=0, df7=0;
+    int df2=0, df4=0, df6=0, df8=0;
+    Atom particle;
 
     for(int j=0; j<data.temp_beads.size(); ++j)
     {
-        test.x = frame[j][0];
-        test.y = frame[j][1];
-        test.z = frame[j][2];
-        test.mol_tag = data.temp_beads[j].mol_tag;
+        particle.x = frame[j][0];
+        particle.y = frame[j][1];
+        particle.z = frame[j][2];
+        particle.mol_tag = data.temp_beads[j].mol_tag;
 
         // determine whether you want +angle or - angle
-        if( radToDeg*acos( x2.dot(z_axis) ) < 0.000001)
-        {
-             test.rotate(rot_axis, angle);
-        }
-        else{
-            test.rotate(rot_axis, -angle);
-        }
+        Atom part=particle-cm;
+        part=right_angle(x2, z_axis, part, rot_axis, angle);
+        Atom cm_rot=cm-cm;
+        cm_rot=right_angle(x2, z_axis, cm_rot, rot_axis, angle);
 
         //data.temp_beads[j] = test; // just for testing xyz in vmd
 
-        if(test.mol_tag != MOLTAG_NANO && test.x-cm.x > 0)
+        if(particle.mol_tag == 1 && part.x-cm_rot.x > 0)
         {
-            ++posx;
+                ++posx1;
         }
-        if(test.mol_tag != MOLTAG_NANO && test.x-cm.x < 0)
-        {
-            ++negx;
+        if(particle.mol_tag == 3 && part.x-cm_rot.x > 0){
+                ++posx3;
         }
-        if(test.mol_tag != MOLTAG_NANO && test.y-cm.y > 0)
+
+        if(particle.mol_tag ==1 && part.x-cm_rot.x < 0)
         {
-            ++posy;
+            ++negx1;
         }
-        if(test.mol_tag != MOLTAG_NANO && test.y-cm.y < 0)
-        {
-            ++negy;
+        if(particle.mol_tag == 3 && part.x-cm_rot.x < 0){
+            ++negx3;
         }
-        if(test.mol_tag != MOLTAG_NANO && test.y-cm.y > test.x-cm.x)
+
+
+        if(particle.mol_tag ==1 && part.y-cm_rot.y > 0)
         {
-            ++poso;
+            ++posy1;
         }
-        if(test.mol_tag != MOLTAG_NANO && test.y-cm.y < test.x-cm.x)
+        if(particle.mol_tag == 3 && part.y-cm_rot.y > 0){
+            ++posy3;
+        }
+
+        if(particle.mol_tag ==1 && part.y-cm_rot.y < 0)
         {
-            ++nego;
+            ++negy1;
+        }
+        if(particle.mol_tag == 3 && part.y-cm_rot.y < 0){
+            ++negy3;
         }
     }
-    diff1 = abs(posx - negx);
-    diff2 = abs(posy - negy);
-    diff3 = abs(poso - nego);
 
-    // void printXYZ(Data& data, Atom axis, Atom com)
+    df1=abs(posx1-posx3);
+    df2=abs(posx1-negx1);
+    df7=abs(posx3-negx3);
+    df3=abs(posy1-posy3);
+    df4=abs(posy1-negy1);
+    df8=abs(posy3-negy3);
+    df5=abs(negx1-negx3);
+    df6=abs(negy1-negy3);
+     //void printXYZ(Data& data, Atom axis, Atom com);
     //printXYZ(data, axis, cm);
 
-    return diff1+diff2+diff3;
+    return df1+df2+df3+df4+df5+df6+df7+df8;
 
 }
 
@@ -280,13 +292,13 @@ public:
 
             // determine whether you want +angle or - angle and rotate
 
-            right_angle(x3, z_axis, particle, rot_axis, angle);
-            right_angle(x3, z_axis, cm, rot_axis, angle);
+            Atom part=right_angle(x3, z_axis, particle, rot_axis, angle);
+            Atom cm_rot=right_angle(x3, z_axis, cm, rot_axis, angle);
 
             //fill histo
             for (int b=0; b<histo_size;b++)
             {
-                if (particle.type == 2 && (particle.z - cm.z + 40) >= 0.6*b && (particle.z - cm.z + 40) < 0.6*(b+1))
+                if (particle.type == 2 && (part.z - cm_rot.z + 40) >= 0.6*b && (part.z - cm_rot.z + 40) < 0.6*(b+1))
                 {
                     increment_last(b);
                 }
@@ -433,7 +445,7 @@ public:
 
                 //auto t1 = high_resolution_clock::now();
                 //cout << "build start " << endl;
-                cout << "#step  stalk (0-no, 1-yes) pore (0-no, 1-yes)"<<endl;
+                cout << "#step  pore (0-no, 1-yes) stalk (0-no, 1-yes)"<<endl;
 
                 while(status == exdrOK && ( stop == -1 || step < first_step+stop) ) // Analyze frame
                 {
@@ -513,7 +525,6 @@ public:
 
                         file.close();
                     }
-
 
                 } // end for freme while cycle
                 xdrfile_close(xfp);
