@@ -41,7 +41,7 @@ print 2*pi*a*a+((2*pi*a*c*c)/sqrt(c*c-a*a))*asin((sqrt(c*c-a*a))/(c))}'`
   fi
   
   pos_z=`grep -B 99999 Velocities data.equi | grep -A 99999 Atoms | awk 'BEGIN{max=-999}{if(max<$7 && length($7) != 0) max=$7} END{print max}'`
-  pos_z=`echo $pos_z $equi_rad | awk '{print ($1 + $2 +1) }'`
+  pos_z=`echo $pos_z $polar_rad | awk '{print ($1 + $2 +1) }'`
 
   cp $1 $2
   sed -i -e 's/sed_nano/'"$nano"'/g' $2
@@ -86,6 +86,7 @@ gen_ves load_ves_prescript load_ves $box
 gen_nano "nanoparticle_prescript" "nanoparticle" $scale $c_param $num_lig_area $num_nano_area $box
 ./ico load_ves nanoparticle > data.ves_nano
 gen_in "in.prescript_production" "in.production" $run_steps $box
+gen_in "in.prescript_restart" "in.restart" $run_steps $box
 gen_ff "force_field_prescript" "force_field" $strength $h_size
 
 sed -i -e 's/mass_1/'"1"'/g' data.ves_nano
