@@ -10,7 +10,9 @@ for rad in $radius_list
 do 
   for lcount in $lipid_count_list
   do
-    folder="r${rad}_h$5_l${lcount}"
+ for v in `seq 3 1 3`
+    do
+      folder="r${rad}_h$5_l${lcount}_v$v"
     echo $folder
 
     rcount=$(($lcount / 2))
@@ -22,6 +24,7 @@ do
     cd $folder
       ./prep.sh $1 $lcount $rcount $rad $4 $5
     cd ..
+    done
   done  
 done
 }
