@@ -86,10 +86,10 @@ double median(vector<double>& arr)
  * @param data
  * @return
  */
-double get_cutoff(Data& data)
+double get_cutoff(Data& data, Atom cm)
 {
     vector<double> cmarray(data.temp_beads.size() , 0); //calculate median for cutoff
-    Atom cm;
+
     //
     for(int a=0; a<data.temp_beads.size(); ++a) // loop over particles to build cm array
     {
@@ -98,21 +98,20 @@ double get_cutoff(Data& data)
             cmarray[a] = cm.distSQ( data.temp_beads[a] );
         }
     }
-    return 1.5*sqrt( median(cmarray) );
+    return 1.3*sqrt( median(cmarray) );
 }
-
-
 
 
 int symmetry( Atom test, Atom cm, rvec* frame, Data& data);
 
 
 
-Atom get_axis(Data& data, rvec* frame, double cutoff)
+Atom get_axis(Data& data, rvec* frame, double cutoff, vector <int> Nneigh)
 {
-    int temp=10000;
+    int temp=1000000;
     int diff=-1;
     Atom id, test;
+    int index=-1;
     Atom cm=com(frame, data, vector<int>{1,3});
 
     for(int i=0; i<data.temp_beads.size(); ++i) // loop over particles to construct axis through
@@ -122,15 +121,16 @@ Atom get_axis(Data& data, rvec* frame, double cutoff)
         test.z = frame[i][2];
         test.mol_tag = data.temp_beads[i].mol_tag;
 
-        if(test.mol_tag != MOLTAG_NANO && (test-cm).size()  > cutoff) // look at vesicle caps only
+
+        if(test.mol_tag != MOLTAG_NANO && (test-cm).size()  > cutoff && Nneigh[i] > 3 ) // look at vesicle caps only
         {
             diff = symmetry(test, cm, frame, data);
-            //cout<<diff<<endl;
 
             if(diff<temp)
             {
                 temp=diff;
                 id=test;
+                index=i;
             }
         }
     }
@@ -153,6 +153,7 @@ int symmetry( Atom test, Atom cm, rvec* frame, Data& data)
     Atom x2=axis;
 
     x2.rotate(rot_axis, angle);
+
     //cm.rotate(rot_axis, angle);
 
     int  posx1=0, posx3=0;
@@ -178,36 +179,35 @@ int symmetry( Atom test, Atom cm, rvec* frame, Data& data)
 
         //data.temp_beads[j] = test; // just for testing xyz in vmd
 
-        if(particle.mol_tag == 1 && part.x-cm_rot.x > 0)
+        if(particle.mol_tag == 1 && part.x > 0)
         {
                 ++posx1;
         }
-        if(particle.mol_tag == 3 && part.x-cm_rot.x > 0){
+        if(particle.mol_tag == 3 && part.x > 0){
                 ++posx3;
         }
 
-        if(particle.mol_tag ==1 && part.x-cm_rot.x < 0)
+        if(particle.mol_tag ==1 && part.x < 0)
         {
             ++negx1;
         }
-        if(particle.mol_tag == 3 && part.x-cm_rot.x < 0){
+        if(particle.mol_tag == 3 && part.x < 0){
             ++negx3;
         }
 
-
-        if(particle.mol_tag ==1 && part.y-cm_rot.y > 0)
+        if(particle.mol_tag ==1 && part.y > 0)
         {
             ++posy1;
         }
-        if(particle.mol_tag == 3 && part.y-cm_rot.y > 0){
+        if(particle.mol_tag == 3 && part.y > 0){
             ++posy3;
         }
 
-        if(particle.mol_tag ==1 && part.y-cm_rot.y < 0)
+        if(particle.mol_tag ==1 && part.y < 0)
         {
             ++negy1;
         }
-        if(particle.mol_tag == 3 && part.y-cm_rot.y < 0){
+        if(particle.mol_tag == 3 && part.y < 0){
             ++negy3;
         }
     }
@@ -236,6 +236,8 @@ private:
 public:
     Histogram(){}
 
+    vector< vector<int> > bin;
+
     void init_frame()
     {
         bin.push_back( vector<int>(bin_size, 0) );
@@ -260,11 +262,11 @@ public:
         myfile.close();
     }
 
-    void frame_histo(Data& data, rvec* frame)
+    void frame_histo(Data& data, rvec* frame, vector <int> Nneigh)
     {
         Atom cm = com(frame, data, vector<int>{1,3});
-        double cutoff = get_cutoff(data);
-        Atom id = get_axis(data, frame, cutoff);
+        double cutoff = get_cutoff(data, cm);
+        Atom id = get_axis(data, frame, cutoff, Nneigh);
         //rotate structure by cm-id axis
         Atom z_axis = Atom(0,0,1);
         Atom axis = id-cm;                          // Axis between com and selected particle (id)
@@ -282,6 +284,8 @@ public:
         //histogram, bins
         int histo_size=150;
         init_frame();
+        //cout<<data.temp_beads.size()<<endl;
+        //cout<<endl;
 
         for(int j=0; j<data.temp_beads.size(); ++j) // ~10 000
         {
@@ -292,18 +296,22 @@ public:
 
             // determine whether you want +angle or - angle and rotate
 
-            Atom part=right_angle(x3, z_axis, particle, rot_axis, angle);
-            Atom cm_rot=right_angle(x3, z_axis, cm, rot_axis, angle);
+            Atom part=particle-cm;
+            part=right_angle(x3, z_axis, particle, rot_axis, angle);
+            Atom cm_rot=cm-cm;
+            cm_rot=right_angle(x3, z_axis, cm, rot_axis, angle);
 
             //fill histo
             for (int b=0; b<histo_size;b++)
             {
-                if (particle.type == 2 && (part.z - cm_rot.z + 40) >= 0.6*b && (part.z - cm_rot.z + 40) < 0.6*(b+1))
+                if (particle.type == 2 && (part.z  + 40) >= 0.6*b && (part.z + 40) < 0.6*(b+1))
                 {
+                    //cout<<"C "<<part.x<<" "<<part.y<<" "<<part.z<<endl;
                     increment_last(b);
                 }
             }
         }
+        //exit(0);
 
         /*for (int j=0; j<bin.back().size(); ++j)
         {
@@ -311,7 +319,7 @@ public:
         }*/
     }
 
-    vector< vector<int> > bin;
+
 };
 
 class XTCAnalysis
@@ -326,19 +334,28 @@ private:
     matrix box;
     float prec;
 
-    int grid_size=200;
+    int grid_size=300;
+    int offset;
 
 public:
     Welford_Algo average;
 
     XTCAnalysis() {}
 
+    int calc_grid_size(Atom cm, Atom start){
 
-    void grid_analysis(Data& data, rvec* frame)
+        int mod=cm.dist(start);
+        grid_size=(mod*4 + 20)*4;
+
+        return grid_size;
+    }
+
+
+    void grid_analysis(Data& data, rvec* frame, vector <int> Nneigh)
     {
         Atom cm = com(frame, data, vector<int>{1,3});
-        double cutoff = get_cutoff(data);
-        Atom id = get_axis(data, frame, cutoff);
+        double cutoff = get_cutoff(data, cm);
+        Atom id = get_axis(data, frame, cutoff, Nneigh);
         Atom z_axis = Atom(0,0,1);
         Atom axis = id-cm;                          // Axis between com and selected particle (id)
         axis.normalise();  // normalise axis vector for correct rotation
@@ -351,6 +368,8 @@ public:
 
         Atom start=com(frame, data, vector<int>{1} );
         Atom start2=com(frame, data, vector<int>{3});
+        calc_grid_size(cm, start);
+        offset=grid_size*0.5*0.25;
 
         //vector<vector<int> > grid(grid_size+1, vector<int> (grid_size+1, 0));
         //
@@ -360,22 +379,21 @@ public:
         init_grid(grid);
 
         // set grid origin
-        int x_offset = 20;
-        int y_offset = 20;
-        int z_offset = 20;
+
         double bin_size=0.25;
         Atom grid_point;
-        right_angle(x3, z_axis, start, rot_axis, angle);
+        Atom cm_rot=right_angle(x3, z_axis, cm, rot_axis, angle);
+        Atom start_rot=right_angle(x3, z_axis, start, rot_axis, angle);
 
-        start.x=round( (start.x +x_offset)/bin_size );
-        start.y=round( (start.y +y_offset)/bin_size );
-        start.z=round( (start.z +z_offset)/bin_size );
+        start_rot.x=round( (start_rot.x - cm_rot.x +offset)/bin_size );
+        start_rot.y=round( (start_rot.y - cm_rot.y +offset)/bin_size );
+        start_rot.z=round( (start_rot.z - cm_rot.z +offset)/bin_size );
 
-        right_angle(x3, z_axis, start2, rot_axis, angle);
+        Atom start2_rot=right_angle(x3, z_axis, start2, rot_axis, angle);
 
-        start2.x=round( (start2.x +x_offset)/bin_size );
-        start2.y=round( (start2.y +y_offset)/bin_size );
-        start2.z=round( (start2.z +z_offset)/bin_size );
+        start2_rot.x=round( (start2_rot.x - cm_rot.x + offset)/bin_size );
+        start2_rot.y=round( (start2_rot.y - cm_rot.y +offset)/bin_size );
+        start2_rot.z=round( (start2_rot.z - cm_rot.z +offset)/bin_size );
 
         for(int j=0; j<data.temp_beads.size(); ++j) // ~10 000
         {
@@ -383,24 +401,26 @@ public:
             particle.y = frame[j][1];
             particle.z = frame[j][2];
             particle.type = data.temp_beads[j].type;
+            particle.mol_tag=data.temp_beads[j].mol_tag;
 
             // determine whether you want +angle or - angle and rotate
-            right_angle(x3, z_axis, particle, rot_axis, angle);
-            right_angle(x3, z_axis, cm, rot_axis, angle);
+            Atom part=right_angle(x3, z_axis, particle, rot_axis, angle);
 
-            build_grid(particle,grid);
+
+            build_grid(part,cm_rot,grid);
         }
 
         //
         // analyze grid
         //
-        if( is_pore(start, grid,start2) )
-            cout <<step<<" 1 "; // 1 means pore, 0 means no pore
+        //if( is_pore(start_rot, grid,start2_rot) >= 1 )
+            cout << step << " " << is_pore(start_rot, grid,start2_rot); // 0 - no pore, 1 - leaky pore, 2 - pore between vesicles
 
-        else {
-            cout <<step<<" 0 ";
-        }
+        //else {
+         //   cout <<step<<" 0 ";
+        //}
         //print_grid(grid);
+        //exit(1);
     }
 
     int get_init_stalk(Data& data, vector<int>& Nneigh)
@@ -419,7 +439,6 @@ public:
     int analyze_histogram(string inName, Data& data, int stop=-1)
     {
         int status=exdrOK;
-        double dist,max=0;
 
         int first_step;
 
@@ -452,11 +471,17 @@ public:
                     status = read_xtc(xfp, natoms, &step, &time, box, frame, &prec); // reads 1 entire frame from xtc
 
                     //
+                    //Build neighbor list. Nneigh-->list with number of neigh for each particle; neigh_index --> list of neigh of each particle.
+                    //
+                    vector <int> Nneigh, neigh_index;
+                    generate_pairlist(data, frame, Nneigh, neigh_index);
+
+                    //
                     // Histogram - Fusion detection
                     //
                     if( data.in.histo )
                     {
-                        hist.frame_histo( data, frame );
+                        hist.frame_histo( data, frame , Nneigh);
                         hist.print();
                     }
 
@@ -466,13 +491,9 @@ public:
                     // - Identify Stalk
                     // - Two vesicles comparison sims
                     // -- Average distance of vesicles
-                    grid_analysis( data, frame );
+                    grid_analysis( data, frame, Nneigh );
 
-                    //
-                    //Build neighbor list. Nneigh-->list with number of neigh for each particle; neigh_index --> list of neigh of each particle.
-                    //
-                    vector <int> Nneigh, neigh_index;
-                    generate_pairlist(data, frame, Nneigh, neigh_index);
+
 
                     //
                     //  Cluster analysis - stalk
@@ -701,7 +722,26 @@ public:
 
     void print_grid(vector<vector<vector< tuple<int,bool> >>>& grid)
     {
-        for (int n=0;n<grid_size;++n){
+        cout << grid_size*grid_size*grid_size << endl;
+        cout << "comment" << endl;
+        for (int x=0;x<grid_size;++x)
+        {
+            for (int y=0;y<grid_size;++y)
+            {
+                for (int z=0;z<grid_size;++z)
+                {
+                    if (get<0>(grid[x][y][z])==0)
+                    {
+                        cout << "H " << x << " " << y << " " << z << endl;
+                    }
+                    else
+                    {
+                        cout << "O " << x << " " << y << " " << z << endl;
+                    }
+                }
+            }
+        }
+        /*for (int n=0;n<grid_size;++n){
             for (int m=0;m<grid_size;++m){
                 for (int l=0;l<grid_size;++l){
                     if (l!=grid_size-1)
@@ -721,20 +761,20 @@ public:
                     }
                 }
             }
-        }
+        }*/
     }
 
-    int build_grid(Atom particle, vector<vector<vector< tuple<int,bool> >>>& grid)
+    int build_grid(Atom particle, Atom cm_rot, vector<vector<vector< tuple<int,bool> >>>& grid)
     {
         Atom grid_point;
-        int x_offset = 20;
-        int y_offset = 20;
-        int z_offset = 20;
+        int x_offset = 30;
+        int y_offset = 30;
+        int z_offset = 30;
         double bin_size=0.25;
         int cut, lowx, highx, lowy, highy, lowz, highz;
-        grid_point.x = (particle.x +x_offset)/bin_size ;
-        grid_point.y = (particle.y +y_offset)/bin_size ;
-        grid_point.z = (particle.z +z_offset)/bin_size ;
+        grid_point.x = (particle.x - cm_rot.x +offset)/bin_size ;
+        grid_point.y = (particle.y - cm_rot.y +offset)/bin_size ;
+        grid_point.z = (particle.z - cm_rot.z +offset)/bin_size ;
 
         // Find grip point surrounding
         cut=(pow(2.0, 1.0/6.0))/bin_size +1;
@@ -758,76 +798,110 @@ public:
             highz = grid_size-1;
 
         // assing gridpoing to particle
-       // if (particle.type == 2){
-            for (int pointx=lowx;pointx<=highx;pointx++){
-                for (int pointy=lowy;pointy<=highy;pointy++){
-                    for (int pointz=lowz;pointz<=highz;pointz++)
+        for (int pointx=lowx;pointx<=highx;pointx++){
+            for (int pointy=lowy;pointy<=highy;pointy++){
+                for (int pointz=lowz;pointz<=highz;pointz++)
+                {
+                    grid_point = Atom( pointx*bin_size - offset + cm_rot.x , pointy*bin_size - offset + cm_rot.y, pointz*bin_size - offset + cm_rot.z);
+
+                    //
+                    // Particle belong to a bin if it intersets with a cube size bin_size centered in bin coordinate
+                    // worst case scenario: particle intersects with cube tip
+                    // distance from cube center to tip = (3/4*bin_size^2)^1/2
+                    // particle size = sigma * 2^1/6
+                    //
+                    // deprecated: grid_point.distSQ(particle) < 1.0*pow(2.0, 1.0/3.0)+pow(bin_size, 2.0)
+                    //
+                    if ( grid_point.distSQ(particle) < 1.0*pow(2.0, 1.0/3.0) + 3.0/4.0*pow(bin_size, 2.0) )
                     {
-                        grid_point = Atom( pointx*bin_size - x_offset , pointy*bin_size - y_offset, pointz*bin_size - z_offset);
-
-                        if ( grid_point.distSQ(particle) < pow(2.0, 1.0/3.0)+pow(bin_size, 2.0) )
-                        {
-                            ++get<0>(grid[pointx][pointy][pointz]);
-                        }
+                        ++get<0>(grid[pointx][pointy][pointz]);
                     }
-
                 }
+
             }
-       // }
+        }
+
         return 0;
     }
 
-    bool is_pore(Atom start, vector<vector<vector< tuple<int,bool> >>>& grid, Atom start2)
+
+
+    /**
+     * @brief is_pore
+     * @param start
+     * @param grid - represents a system which starts form 0,0,0
+     * @param start2
+     * @return 1 - Leaky pore, 2 - pore between vesicles
+     */
+    int is_pore(Atom start, vector<vector<vector< tuple<int,bool> >>>& grid, Atom start2)
     {
         //
         // analyze grid
         //
-        stack<int> instack;
+        stack<int> instack; // index of neighbor = x + y*size + z*size*size
+
         // push i * x_size*y_size + j*y_size + k
         // pop(), only removes last element, use top() then pop()
-        int indx=start.x+start.y*grid_size+start.z*grid_size*grid_size;
+        int indx=start.x + start.y*grid_size + start.z*grid_size*grid_size;
         int x,y,z;
         instack.push(indx);
 
         int dx[] = {0, 1,  0, -1,  0,  0};
         int dy[] = {0, 0,  1,  0, -1,  0};
         int dz[] = {1, 0,  0,  0,  0, -1};
-        while(!instack.empty()){
+        while(!instack.empty()) {
 
+            //
+            // get coordinates from index stack
+            //
             z = instack.top() / (grid_size * grid_size);
-            instack.top() -= (z * grid_size * grid_size);
-            y = instack.top() / grid_size;
-            x=instack.top() % grid_size;
-
+            y = ( instack.top() - (z * grid_size * grid_size) ) / grid_size;
+            x = instack.top() % grid_size;
             instack.pop(); // remove that index from stack
-            //check neighbors
+
+            //
+            //check neighbors in 6 directions
+            //
             for (int d=0; d < 6; ++d)
             {
+                //
+                // move coordinate to neighboring cells
+                //
                 int neigh_x=x+dx[d];
                 int neigh_y=y+dy[d];
                 int neigh_z=z+dz[d];
+
                 //
-                // Check boundaries
+                // Check if we are within boundaries
                 //
-                if(neigh_x>=0 && neigh_y>=0 && neigh_z>=0 && neigh_x<grid_size && neigh_y<grid_size && neigh_z<grid_size) {
-                    if(get<0>(grid[neigh_x][neigh_y][neigh_z])==0 && get<1>(grid[neigh_x][neigh_y][neigh_z])==false)
+                if(neigh_x>=0 && neigh_y>=0 && neigh_z>=0 && neigh_x<grid_size && neigh_y<grid_size && neigh_z<grid_size)
+                {
+                    //
+                    // if cells is empty and not visited
+                    //
+                    if(get<0>(grid[neigh_x][neigh_y][neigh_z]) == 0 && get<1>(grid[neigh_x][neigh_y][neigh_z]) == false)
                     {
+                        //
                         //replace neighbors with new neigh whose value is 0
-                        instack.push(neigh_x+neigh_y*grid_size+neigh_z*grid_size*grid_size); //add new neighbors to stack
+                        //
+                        instack.push(neigh_x + neigh_y*grid_size + neigh_z*grid_size*grid_size); //add new neighbors to stack
                         get<1>(grid[neigh_x][neigh_y][neigh_z])=true;
                     }
                 }
-                else
+                else // we are outside of boundaries == leaky pore found
                 {
-                    return false;
+                    return 1;
                 }
             }
         }
 
+        //
+        // the COM cell of second vesicle is visited
+        //
         if(get<1>(grid[start2.x][start2.y][start2.z])==true){
-            return true;
+            return 2;
         }
-        return false;
+        return 0;
     }
 
     /**
