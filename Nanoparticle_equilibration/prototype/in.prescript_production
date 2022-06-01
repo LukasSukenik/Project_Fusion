@@ -42,8 +42,10 @@ compute pair_ves1_rec                 ves1 group/group ligand1
 compute gyr membrane gyration
 compute gyr1 ves1 gyration
 compute cm1 ves1 com
+compute cm2 ligand1 com
+compute cm3 nano1 com
 
-thermo_style     custom step temp pe ke c_pair_lig_rec c_pair_ves1_rec c_gyr c_gyr1 c_cm1[1] c_cm1[2] c_cm1[3]
+thermo_style     custom step temp pe ke c_pair_lig_rec c_pair_ves1_rec c_gyr c_gyr1 c_cm1[1] c_cm1[2] c_cm1[3] c_cm2[1] c_cm2[2] c_cm2[3] c_cm3[1] c_cm3[2] c_cm3[3]
 thermo           1000
 thermo_modify norm no
 dump             2 all xtc 1000 file.xtc
