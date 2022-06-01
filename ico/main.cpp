@@ -81,8 +81,8 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
 
             if( data.in.is_fit() )
                 data.fit(data.in.fit_x, data.in.fit_y,data.in.fit_z);
-            if( data.in.fit_lipo )
-                data.fit_lipo();
+            if( data.in.fit_lipo() )
+                data.fit_lipo(data.in.up);
             if( data.in.center )
                 data.center();
 

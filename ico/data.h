@@ -83,7 +83,7 @@ public:
     int fit_z=-99;
     Atom ivx = Atom(0.0, 0.0, 0.0);
     bool fit = false;
-    bool fit_lipo = false;
+    int up = -1;
     Atom boxm = Atom(-1,-1,-1);
     Atom boxp = Atom(-1,-1,-1);
     Atom com_pos = Atom(0.0, 0.0, 0.0);
@@ -119,6 +119,13 @@ public:
     bool is_fit()
     {
         if( fit_x == -99 || fit_y == -99 || fit_z== -99)
+            return false;
+        return true;
+    }
+
+    bool fit_lipo()
+    {
+        if( up == -1)
             return false;
         return true;
     }
@@ -217,7 +224,7 @@ public:
             if( what.compare("Center") == 0 )  { center=true; }
             if( what.compare("Timestep") == 0 )  { timestep=true; }
             if( what.compare("Fit:") == 0 )  { ss >> fit_x >> fit_y >> fit_z; }
-            if( what.compare("Fit_lipo") == 0 )  { fit_lipo=true; }
+            if( what.compare("Fit_lipo") == 0 )  { ss >> up; }
             if( what.compare("Align:") == 0 )  { ss >> mtag_1 >> mtag_2;  }
             if( what.compare("Align_z:") == 0 )  { ss >> mtag_1z >> mtag_2z;  }
             if( what.compare("Impact_vector:") == 0 )  { ss >> ivx.x >> ivx.y >> ivx.z; }
@@ -283,7 +290,7 @@ public:
         center=false;
         timestep=false;
         fit = false;
-        fit_lipo=false;
+        up=-1;
         histo=false;
         dist=false;
         mtag_1=-1;
@@ -581,10 +588,10 @@ public:
 
     }
 
-    void fit_lipo()
+    void fit_lipo(int up)
     {
 
-        Atom displace = Atom(0, 0, 25); // class Atom works as a vector as well.
+        Atom displace = Atom(0, 0, up); // class Atom works as a vector as well.
         move(displace); // displace liposome2 by vector displace
 
         while( !overlap() )
