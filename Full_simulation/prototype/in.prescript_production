@@ -40,13 +40,18 @@ compute pair_lig_rec     membrane group/group ligand
 compute pair_ves1_rec    ves1 group/group ligand
 compute pair_ves2_rec    ves2 group/group ligand
 
+compute pair_lig_rec2     membrane group/group ligand2
+compute pair_ves1_rec2    ves1 group/group ligand2
+compute pair_ves2_rec2   ves2 group/group ligand2
+
+
 compute gyr membrane gyration
 compute gyr1 ves1 gyration
 compute gyr2 ves2 gyration
 compute cm1 ves1 com
 compute cm2 ves2 com
 
-thermo_style     custom step temp pe ke c_pair_lig_rec c_pair_ves1_rec c_pair_ves2_rec c_gyr c_gyr1 c_gyr2 c_cm1[1] c_cm1[2] c_cm1[3] c_cm2[1] c_cm2[2] c_cm2[3]
+thermo_style     custom step temp pe ke c_pair_lig_rec c_pair_ves1_rec c_pair_ves2_rec c_gyr c_gyr1 c_gyr2 c_cm1[1] c_cm1[2] c_cm1[3] c_cm2[1] c_cm2[2] c_cm2[3] c_pair_lig_rec2 c_pair_ves1_rec2 c_pair_ves2_rec2
 thermo           5000
 thermo_modify norm no
 dump             2 all xtc 5000 file.xtc
