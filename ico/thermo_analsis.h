@@ -37,7 +37,12 @@ double r=5e-9; // m
         int jump_limit = 150;
 
         // Einstein-Stokes
-        //double D=kb*T/(6*pi*vis*r); // m^2 . s
+        ofstream file;
+        file.open ("D_constant");
+        double D=kb*T/(6*pi*vis*r); // m^2 / s
+        D=D*10e12; //um2/s
+        file<<D<<endl;
+        file.close();
 
         Welford_Algo aver[jump_limit];
         Atom origin(0,0,0);
