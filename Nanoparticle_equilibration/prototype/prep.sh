@@ -27,12 +27,17 @@ function gen_nano
   
   S_sphere=`echo $rscale | awk '{pi=atan2(0, -1); print 4*pi*$1*$1;}'`
   equi_rad=$rscale # equatorial radius
-  polar_rad=`echo $rscale $c | awk '{print $1*$2}'` 
+  polar_rad=`echo $rscale $c | awk '{print $1*$2}'`
+ if (( $(echo "$c > 1" | bc -l )));then 
   S_actual=`echo $equi_rad $polar_rad | awk 'function asin(x) { return atan2(x, sqrt(1-x*x)) }
 {pi=atan2(0, -1); a=$1; c=$2;
 print 2*pi*a*a+((2*pi*a*c*c)/sqrt(c*c-a*a))*asin((sqrt(c*c-a*a))/(c))}'`
-
-  if [[ $c -eq 1 ]]; then
+else
+	S_actual=`echo $equi_rad $polar_rad | awk 'function asin(x) { return atan2(x, sqrt(1-x*x)) }
+{pi=atan2(0, -1); a=$1; c=$2; e=(1/a)*sqrt(a*a-c*c)
+print 2*pi*a*a+((pi*c*c)/e)*log((1+e)/1-e)}'`
+fi
+  if (( $(echo "$c == 1" | bc -l ))); then
     echo "Prolate/oblate ratio c can't be 1, use 1.001"
     exit
   else
@@ -64,9 +69,11 @@ function gen_ff
 {
   interaction=$3
   head=$4
+  inter_2=$5
 
   cp $1 $2
   sed -i -e 's/sed_interaction/'"$interaction"'/g' $2
+  sed -i -e 's/sed_inter2/'"$inter_2"'/g' $2
   sed -i -e 's/sed_head_size/'"$head"'/g' $2
 }
 
@@ -81,13 +88,14 @@ c_param=$3
 scale=$4
 box=$5
 h_size=$6
+str_2=$7
 
 gen_ves load_ves_prescript load_ves $box
 gen_nano "nanoparticle_prescript" "nanoparticle" $scale $c_param $num_lig_area $num_nano_area $box
 ./ico load_ves nanoparticle > data.ves_nano
 gen_in "in.prescript_production" "in.production" $run_steps $box
 gen_in "in.prescript_restart" "in.restart" $run_steps $box
-gen_ff "force_field_prescript" "force_field" $strength $h_size
+gen_ff "force_field_prescript" "force_field" $strength $h_size $str_2
 
 sed -i -e 's/mass_1/'"1"'/g' data.ves_nano
 sed -i -e 's/mass_2/'"1"'/g' data.ves_nano
