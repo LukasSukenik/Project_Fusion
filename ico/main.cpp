@@ -88,6 +88,10 @@ int main(int argc, char* argv[]) // // $num of beads per edge, box dimensions X(
 
             if( !data.in.analize_infile.empty() )
                 xtc_analyzator.analyze_histogram( data.in.analize_infile, data );
+
+            if ( !data.in.in_file.empty() ){
+                xtc_analyzator.analyze_np_position(data.in.in_file, data);
+            }
             if( data.in.timestep )
                 t.timestep_analyze();
 

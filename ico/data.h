@@ -74,6 +74,7 @@ public:
     int atom_type=1;
     bool center=false;
     bool timestep=false;
+    string in_file;
     int mtag_1=-1;
     int mtag_2=-1;
     int mtag_1z=-1;
@@ -110,6 +111,7 @@ public:
         return false;
         */
     }
+
     bool is_mtag_12z()
     {
         if( mtag_1z == -1 || mtag_2z == -1 )
@@ -220,6 +222,7 @@ public:
             if( what.compare("Load_file:") == 0 )  { ss >> infile; }
             if( what.compare("Analyze:") == 0 )  { ss >> analize_infile; }
             if( what.compare("Histogram") == 0 )  { histo=true; }
+            if( what.compare("NP_position:") == 0 )  { ss >> in_file; }
             if( what.compare("Ves_distances") == 0 )  { dist=true; }
             if( what.compare("Center") == 0 )  { center=true; }
             if( what.compare("Timestep") == 0 )  { timestep=true; }
@@ -310,6 +313,7 @@ public:
         ivx=Atom(0.0, 0.0, 0.0);
 
         analize_infile.clear();
+        in_file.clear();
         infile.clear();
         bparam.clear();
         cparam.clear();
@@ -800,6 +804,23 @@ public:
                 for(Atom& item : temp_beads)
                 {
                     item.rotate(z_axis, 3.14159265359);       //rotate nano+lip1 180deg in z axis. Locates patch2 to +y
+
+                }
+                cerr << "Patch 2 at +y" << endl;
+            }
+            for(Atom& item : temp_beads )
+            {
+                if(item.type == 6)
+                {
+                    patch2_COM = center_of_mass_type(item.type); //Calculate COM of the particles of temp_beads that have atom type 5 i.e. atoms of the patch2
+                }
+
+            }
+            if(patch2_COM.x > 0)        //if patch is located at -y, rotate.
+            {
+                for(Atom& item : temp_beads)
+                {
+                    item.rotate(z_axis, 3.14159265359/2);       //rotate nano+lip1 180deg in z axis. Locates patch2 to +y
 
                 }
                 cerr << "Patch 2 at +y" << endl;
