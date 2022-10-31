@@ -558,6 +558,8 @@ public:
                 //auto t1 = high_resolution_clock::now();
                 //cout << "build start " << endl;
                 cout << "#step  pore (0-no, 1-yes) stalk (0-no, 1-yes)"<<endl;
+                ofstream bind_file;
+                bind_file.open("Binding_time");
 
                 while(status == exdrOK && ( stop == -1 || step < first_step+stop) ) // Analyze frame
                 {
@@ -602,6 +604,16 @@ public:
                         cout<<" 1 "<<endl;
                     }
 
+                    //find out time of binding --> cluster of tails and np
+                    vector<int>binding;
+                    clusterize(data, binding, Nneigh, neigh_index, init_stalk, vector<int>{1,2,3,4,5,6});
+
+                    if(binding.size() > 0.96*data.temp_beads.size()){
+                        bind_file<<step<<" 1 "<<endl;
+                    }else{
+                        bind_file<<step<<" 0 "<<endl;
+                    }
+
                     //
                     //Cluster analysis - distances
                     //
@@ -642,6 +654,7 @@ public:
 
                 } // end for freme while cycle
                 xdrfile_close(xfp);
+                bind_file.close();
                 /*auto t2 = high_resolution_clock::now();
                 auto ms_int = duration_cast<milliseconds>(t2 - t1);
                 std::cout << "duration" << ms_int.count() << "ms\n";*/
