@@ -336,6 +336,7 @@ private:
 
     int grid_size=300;
     int offset;
+    vector<int> np_indexes;
 
 public:
     Welford_Algo average;
@@ -348,6 +349,63 @@ public:
         grid_size=(mod*4 + 20)*4;
 
         return grid_size;
+    }
+
+    void np_analysis(Data& data, rvec* frame, vector <int> Nneigh)
+    {
+        Atom cm = com(frame, data, vector<int>{1,3});
+        double cutoff = get_cutoff(data, cm);
+        Atom id = get_axis(data, frame, cutoff, Nneigh);
+        Atom z_axis = Atom(0,0,1);
+        Atom axis = id-cm;                          // Axis between com and selected particle (id)
+        axis.normalise();  // normalise axis vector for correct rotation
+        Atom rot_axis = axis.cross(z_axis);
+        rot_axis.normalise();                                  // normalise for rotation algo
+        Atom particle;
+        double angle = acos( axis.dot(z_axis) );
+        Atom x3=axis;
+        x3.rotate(rot_axis, angle);
+
+        Atom start=com(frame, data, vector<int>{1} );
+        calc_grid_size(cm, start);
+        offset=grid_size*0.5*0.25;
+
+        //vector<vector<int> > grid(grid_size+1, vector<int> (grid_size+1, 0));
+        //
+        // int > tuple<int,bool>, get<0>(name) -> int get<1>(name) -> bool
+        //
+        vector<vector<vector< tuple<int,bool> >>> grid(grid_size, vector<vector<tuple<int,bool>>>(grid_size, vector<tuple<int,bool>>(grid_size)));
+        init_grid(grid);
+
+        // set grid origin
+
+        double bin_size=0.25;
+        Atom grid_point;
+        Atom cm_rot=right_angle(x3, z_axis, cm, rot_axis, angle);
+        Atom start_rot=right_angle(x3, z_axis, start, rot_axis, angle);
+
+        start_rot.x=round( (start_rot.x - cm_rot.x +offset)/bin_size );
+        start_rot.y=round( (start_rot.y - cm_rot.y +offset)/bin_size );
+        start_rot.z=round( (start_rot.z - cm_rot.z +offset)/bin_size );
+
+        for(int j=0; j<data.temp_beads.size(); ++j) // ~10 000
+        {
+            particle.x = frame[j][0];
+            particle.y = frame[j][1];
+            particle.z = frame[j][2];
+            particle.type = data.temp_beads[j].type;
+            particle.mol_tag=data.temp_beads[j].mol_tag;
+
+            // determine whether you want +angle or - angle and rotate
+            Atom part=right_angle(x3, z_axis, particle, rot_axis, angle);
+
+
+            build_grid(part,cm_rot,grid);
+        }
+
+          where_np(start_rot, grid);
+
+
     }
 
 
@@ -436,6 +494,41 @@ public:
         return init_stalk;
     }
 
+    void analyze_np_position( string inName, Data& data, int stop=-1){
+
+        int status=exdrOK;
+        int first_step;
+        int i;
+        for (i = 0; inName[i] != '\0'; ++i) {
+          fileName[i] = inName[i];
+        }
+        fileName[i] = '\0';
+        status = read_xtc_natoms(fileName, &natoms);
+        if (status == exdrOK)
+        {
+            XDRFILE* xfp = xdrfile_open(fileName, "r");
+            if (xfp != NULL)
+            {
+                rvec frame[natoms];
+                rvec **pointer;
+                status = read_xtc(xfp, natoms, &first_step, &time, box, frame, &prec);
+                while(status == exdrOK && ( stop == -1 || step < first_step+stop) ) // Analyze frame
+                {
+
+                    status = read_xtc(xfp, natoms, &step, &time, box, frame, &prec);
+
+                    //
+                    //Build neighbor list. Nneigh-->list with number of neigh for each particle; neigh_index --> list of neigh of each particle.
+                    //
+                    vector <int> Nneigh, neigh_index;
+                    generate_pairlist(data, frame, Nneigh, neigh_index);
+                    np_analysis( data, frame, Nneigh );
+            }
+            }
+        }
+
+    }
+
     int analyze_histogram(string inName, Data& data, int stop=-1)
     {
         int status=exdrOK;
@@ -506,7 +599,7 @@ public:
                     {
                         cout<<" 0 "<<endl; // 0 means no stalk, 1 means stalk
                     }else{
-                        cout<<" 1 "<<endl;;
+                        cout<<" 1 "<<endl;
                     }
 
                     //
@@ -776,6 +869,7 @@ public:
         grid_point.y = (particle.y - cm_rot.y +offset)/bin_size ;
         grid_point.z = (particle.z - cm_rot.z +offset)/bin_size ;
 
+
         // Find grip point surrounding
         cut=(pow(2.0, 1.0/6.0))/bin_size +1;
         lowx=round(grid_point.x -cut);
@@ -815,6 +909,10 @@ public:
                     if ( grid_point.distSQ(particle) < 1.0*pow(2.0, 1.0/3.0) + 3.0/4.0*pow(bin_size, 2.0) )
                     {
                         ++get<0>(grid[pointx][pointy][pointz]);
+                        if (particle.mol_tag == MOLTAG_NANO ){
+                            int index = pointx + pointy*grid_size + pointz*grid_size*grid_size;
+                            np_indexes.push_back(index);
+                        }
                     }
                 }
 
@@ -822,6 +920,88 @@ public:
         }
 
         return 0;
+    }
+
+    void where_np(Atom start, vector<vector<vector< tuple<int,bool> >>>& grid)
+    {
+        //
+        // analyze grid
+        //
+        stack<int> instack; // index of neighbor = x + y*size + z*size*size
+
+        // push i * x_size*y_size + j*y_size + k
+        // pop(), only removes last element, use top() then pop()
+        int indx=start.x + start.y*grid_size + start.z*grid_size*grid_size;
+        int x,y,z;
+        instack.push(indx);
+
+        int dx[] = {0, 1,  0, -1,  0,  0};
+        int dy[] = {0, 0,  1,  0, -1,  0};
+        int dz[] = {1, 0,  0,  0,  0, -1};
+
+        int np=0;
+
+        while(!instack.empty()) {
+
+            //
+            // get coordinates from index stack
+            //
+            z = instack.top() / (grid_size * grid_size);
+            y = ( instack.top() - (z * grid_size * grid_size) ) / grid_size;
+            x = instack.top() % grid_size;
+            instack.pop(); // remove that index from stack
+
+            //
+            //check neighbors in 6 directions
+            //
+            for (int d=0; d < 6; ++d)
+            {
+                //
+                // move coordinate to neighboring cells
+                //
+                int neigh_x=x+dx[d];
+                int neigh_y=y+dy[d];
+                int neigh_z=z+dz[d];
+
+                //
+                // Check if we are within boundaries
+                //
+
+                if(neigh_x>=0 && neigh_y>=0 && neigh_z>=0 && neigh_x<grid_size && neigh_y<grid_size && neigh_z<grid_size)
+                {
+                    //
+                    // if cells is empty and not visited
+                    //
+
+
+                        if(get<0>(grid[neigh_x][neigh_y][neigh_z]) != 0) {
+                            for (int i=0; i<np_indexes.size(); ++i){
+                                if (np_indexes[i] == (neigh_x + neigh_y*grid_size + neigh_z*grid_size*grid_size)){
+                                    np=1;
+                                }
+                            }
+                        }
+
+
+                    if(get<0>(grid[neigh_x][neigh_y][neigh_z]) == 0 && get<1>(grid[neigh_x][neigh_y][neigh_z]) == false)
+                    {
+                        //
+                        //replace neighbors with new neigh whose value is 0
+                        //
+                        instack.push(neigh_x + neigh_y*grid_size + neigh_z*grid_size*grid_size); //add new neighbors to stack
+                        get<1>(grid[neigh_x][neigh_y][neigh_z])=true;
+                    }
+                }
+            }
+        }
+
+        ofstream myfile;
+          myfile.open ("NP");
+          myfile << "#Nanoparticle out = 0\n";
+          myfile << "#Nanoparticle in = 1\n";
+          myfile << np;
+          myfile.close();
+
     }
 
 
@@ -874,11 +1054,28 @@ public:
                 //
                 // Check if we are within boundaries
                 //
+
                 if(neigh_x>=0 && neigh_y>=0 && neigh_z>=0 && neigh_x<grid_size && neigh_y<grid_size && neigh_z<grid_size)
                 {
                     //
                     // if cells is empty and not visited
                     //
+                    if (step == 10000000){
+                        int np=0;
+                        if(get<0>(grid[neigh_x][neigh_y][neigh_z]) != 0) {
+                            for (int i=0; i<np_indexes.size(); ++i){
+                                if (np_indexes[i] == (neigh_x + neigh_y*grid_size + neigh_z*grid_size*grid_size)){
+                                    np=1;
+                                }
+                            }
+                        }
+                        ofstream myfile;
+                          myfile.open ("NP");
+                          myfile << "Nanoparticle out = 0\n";
+                          myfile << "Nanoparticle in = 1\n";
+                          myfile << np;
+                          myfile.close();
+                    }
                     if(get<0>(grid[neigh_x][neigh_y][neigh_z]) == 0 && get<1>(grid[neigh_x][neigh_y][neigh_z]) == false)
                     {
                         //
